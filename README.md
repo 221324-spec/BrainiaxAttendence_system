@@ -1,4 +1,4 @@
-# CATTS — Corporate Attendance & Time Tracking System
+# Attendance & Time Tracking System
 
 A full-stack attendance management system built with React, TypeScript, Express, and MongoDB.
 
