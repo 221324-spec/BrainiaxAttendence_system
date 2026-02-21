@@ -87,17 +87,6 @@ npm run dev:client
 Backend runs on `http://localhost:5000`  
 Frontend runs on `http://localhost:5173`
 
-## Demo Credentials
-
-| Role     | Email             | Password    |
-|----------|-------------------|-------------|
-| Admin    | admin@catts.com   | password123 |
-| Employee | john@catts.com    | password123 |
-| Employee | jane@catts.com    | password123 |
-| Employee | bob@catts.com     | password123 |
-| Employee | alice@catts.com   | password123 |
-| Employee | charlie@catts.com | password123 |
-
 ## Features
 
 ### Authentication
@@ -133,28 +122,3 @@ Frontend runs on `http://localhost:5173`
   - Index on `date`
 - **AuditLog** — action, performedBy (ref), targetUserId, details, ipAddress
 
-## API Endpoints
-
-### Auth
-| Method | Endpoint          | Description          |
-|--------|-------------------|----------------------|
-| POST   | /api/auth/register | Register new user   |
-| POST   | /api/auth/login    | Login               |
-| GET    | /api/auth/me       | Get current user    |
-
-### Attendance (Employee)
-| Method | Endpoint                | Description              |
-|--------|-------------------------|--------------------------|
-| POST   | /api/attendance/punch-in | Punch in for today      |
-| POST   | /api/attendance/punch-out| Punch out for today     |
-| GET    | /api/attendance/today    | Today's status          |
-| GET    | /api/attendance/history  | Monthly history         |
-| GET    | /api/attendance/summary  | Monthly summary stats   |
-
-### Admin
-| Method | Endpoint                       | Description                   |
-|--------|--------------------------------|-------------------------------|
-| GET    | /api/admin/dashboard           | Dashboard statistics          |
-| GET    | /api/admin/employees           | All employees list            |
-| GET    | /api/admin/employees/status    | Employees with today's status |
-| GET    | /api/admin/export/:employeeId  | Export CSV attendance          |
