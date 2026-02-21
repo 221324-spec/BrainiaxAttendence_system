@@ -57,13 +57,11 @@ catts/
 ```bash
 npm run install:all
 ```
-
-### 2. Configure Environment
 Edit `server/.env`:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/catts
-JWT_SECRET=your-secure-random-secret
+MONGODB_URI=mongodb+srv://Brainiax:123Irfan@cluster0.tvcaslh.mongodb.net/catts?retryWrites=true&w=majority
+JWT_SECRET=dev-secret-key-change-in-production
 JWT_EXPIRES_IN=8h
 CORS_ORIGIN=http://localhost:5173
 ```
@@ -94,6 +92,28 @@ Frontend runs on `http://localhost:5173`
 | Admin    | admin@catts.com   | password123 |
 | Employee | john@catts.com    | password123 |
 | Employee | jane@catts.com    | password123 |
+## Deploying Backend on Render
+
+**Build Command:**
+```
+cd server && npm install && npm run build
+```
+
+**Start Command:**
+```
+cd server && npm start
+```
+
+Make sure your `server/package.json` has:
+```
+"scripts": {
+  "build": "tsc",
+  "start": "node dist/server.js"
+}
+```
+
+If you get `Cannot find module '/opt/render/project/src/server/dist/server.js'`, it means the TypeScript build step was skipped or failed. Ensure `npm run build` creates the `dist` folder and `server.js`.
+If not, check your TypeScript config and build logs.
 | Employee | bob@catts.com     | password123 |
 | Employee | alice@catts.com   | password123 |
 | Employee | charlie@catts.com | password123 |
