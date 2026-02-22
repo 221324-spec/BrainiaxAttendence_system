@@ -106,7 +106,7 @@ export default function AdminDashboard() {
   // (stat card data removed — using richer widgets below)
 
   // Chart.js registration
-  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
   // Doughnut: Present vs Absent
   const present = stats?.presentToday ?? 0;
