@@ -229,16 +229,6 @@ export default function AdminDashboard() {
                 <h4 className="text-sm font-semibold mb-2">Quick Metrics</h4>
                 <SmallDonuts items={[{ label: 'On-Time', value: 91, color: '#10B981' }, { label: 'Late', value: 9, color: '#ef4444' }, { label: 'Avg Work', value: 78, color: '#f59e0b' }, { label: 'Breaks', value: 12, color: '#06b6d4' }]} />
               </div>
-              <div className="flex flex-col justify-center items-start pl-2">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-full bg-green-500 inline-block" />
-                  <span className="font-semibold">{present} Present</span>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="h-3 w-3 rounded-full bg-red-500 inline-block" />
-                  <span className="font-semibold">{absent} Absent</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
