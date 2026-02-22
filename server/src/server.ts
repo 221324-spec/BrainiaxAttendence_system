@@ -13,6 +13,9 @@ import { startMidnightJob } from './cron/midnightJob';
 
 const app = express();
 
+// Trust proxy headers (required when running behind a proxy like Render)
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet());
 app.use(
