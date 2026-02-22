@@ -9,11 +9,11 @@ export default function SmallDonuts({ items = [] }: { items?: { label: string; v
       {items.map((it, idx) => {
         const data = { labels: [it.label, ''], datasets: [{ data: [it.value, Math.max(0, 100 - it.value)], backgroundColor: [it.color || '#06b6d4', '#e6eef2'] }] };
         return (
-          <div key={idx} className="flex items-center gap-2">
-            <div style={{ width: 60, height: 60 }}>
+          <div key={idx} className="flex items-center gap-3 justify-between w-full">
+            <div style={{ width: 80, height: 80 }}>
               <Doughnut data={data} options={{ cutout: '70%', plugins: { legend: { display: false } } }} />
             </div>
-            <div className="ml-1">
+            <div className="ml-3">
               <div className="text-xs text-gray-500">{it.label}</div>
               <div className="text-lg font-semibold">{it.value}%</div>
             </div>
