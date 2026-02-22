@@ -5,6 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
+import ActivityLine from '../components/ActivityLine';
+import SmallDonuts from '../components/SmallDonuts';
+import CircleMetric from '../components/CircleMetric';
+import CalendarWidget from '../components/CalendarWidget';
 import {
   HiOutlineUsers,
   HiOutlineCheckCircle,
@@ -211,20 +215,69 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCardsData.map((card, i) => (
-            <div key={card.label} className="metric-card">
-              <div className="flex items-center gap-4">
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center`} style={{ backgroundImage: `linear-gradient(135deg, var(--primary-600), var(--primary-700))` }}>
-                  <card.icon className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-400">{card.label}</div>
-                  <div className="text-2xl font-extrabold">{card.value}</div>
-                </div>
-              </div>
-              <MiniStat title="Trend" value="" trendData={[1, 3, 2, 4, 6, 5, 7]} color="#60a5fa" />
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 chart-card p-6">
+            <h3 className="text-lg font-bold mb-4">Activity</h3>
+            <ActivityLine />
+          </div>
+
+          {/* Right column: calendar + small event cards (col-span 4) */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="card p-4">
+              <CalendarWidget />
             </div>
-          ))}
+            <div className="card p-4">
+              <h4 className="text-sm font-semibold mb-3">Notifications</h4>
+              <div className="space-y-2">
+                <div className="p-3 rounded-lg bg-primary-600/10">New attendance correction request</div>
+                <div className="p-3 rounded-lg bg-emerald-600/8">Monthly report ready to download</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Second row: line + donuts */}
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 chart-card p-6">
+            <h3 className="text-lg font-bold mb-4">Weekly Trend</h3>
+            <ActivityLine />
+          </div>
+          <div className="lg:col-span-4 chart-card p-6">
+            <h3 className="text-lg font-bold mb-4">Quick Metrics</h3>
+            <SmallDonuts items={[{ label: 'On-Time', value: 91, color: '#10B981' }, { label: 'Late', value: 9, color: '#ef4444' }, { label: 'Avg Work', value: 78, color: '#f59e0b' }, { label: 'Breaks', value: 12, color: '#06b6d4' }]} />
+          </div>
+        </div>
+
+        {/* Third row: mixed box + circular metrics */}
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 chart-card p-6">
+            <h3 className="text-lg font-bold mb-4">Detailed Activity</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="p-4 bg-white/3 rounded-md">{/* placeholder small chart area */}
+                <ActivityLine />
+              </div>
+              <div className="p-4 bg-white/3 rounded-md">
+                <h5 className="text-sm font-semibold mb-2">Stats</h5>
+                <ul className="space-y-2 text-sm text-gray-400">
+                  <li>Total employees: {stats?.totalEmployees ?? 0}</li>
+                  <li>Present today: {stats?.presentToday ?? 0}</li>
+                  <li>Absent today: {stats?.absentToday ?? 0}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 chart-card p-6 flex flex-col items-center gap-6">
+            <h3 className="text-lg font-bold">Overview</h3>
+            <CircleMetric value={Math.round(stats?.attendancePercentage ?? 0)} label="Attendance Rate" color="#06b6d4" />
+            <div className="w-full">
+              <h5 className="text-sm font-semibold mb-3">Summary</h5>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="flex items-center justify-between"><div className="text-sm text-gray-400">Late %</div><div className="font-semibold">9%</div></div>
+                <div className="flex items-center justify-between"><div className="text-sm text-gray-400">Avg Work</div><div className="font-semibold">8h 12m</div></div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
       {/* Charts Overview */}
