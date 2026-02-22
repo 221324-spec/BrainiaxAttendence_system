@@ -130,35 +130,14 @@ export default function AdminDashboard() {
     deptCounts[d] = (deptCounts[d] || 0) + 1;
   });
 
-  // helper to create a striped pattern for a given base color
-  const makeStripePattern = (ctx: CanvasRenderingContext2D, color: string) => {
-    const size = 6;
-    const patternCanvas = document.createElement('canvas');
-    patternCanvas.width = size;
-    patternCanvas.height = size;
-    const pctx = patternCanvas.getContext('2d')!;
-    pctx.fillStyle = color;
-    pctx.fillRect(0, 0, size, size);
-    pctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    pctx.lineWidth = 1;
-    pctx.beginPath();
-    pctx.moveTo(0, size);
-    pctx.lineTo(size, 0);
-    pctx.stroke();
-    return ctx.createPattern(patternCanvas, 'repeat')!;
-  };
-
-  const colors = Object.keys(deptCounts).map((_, i) => `hsl(${(i * 60) % 360}, 70%, 50%)`);
+  // Simple solid-color horizontal bar chart for clear presentation
+  const barColor = 'rgba(59,130,246,0.95)';
   const barData = {
     labels: Object.keys(deptCounts),
     datasets: [
       {
         data: Object.values(deptCounts),
-        backgroundColor: (context: any) => {
-          const chartCtx: CanvasRenderingContext2D = context.chart.ctx;
-          const idx = context.dataIndex;
-          return makeStripePattern(chartCtx, colors[idx]);
-        },
+        backgroundColor: Object.keys(deptCounts).map(() => barColor),
       },
     ],
   };
