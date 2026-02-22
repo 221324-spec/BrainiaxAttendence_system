@@ -232,20 +232,28 @@ html, body, #root {
 .primary { color: var(--primary-600); }
 
 /* Enhanced metric/card styles for modern dashboard */
+/* Metric/card visual - flat and professional */
 .metric-card {
-  @apply rounded-2xl p-6 shadow-[0_10px_30px_rgba(2,6,23,0.6)] transition-all;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(2,6,23,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .chart-card {
-  @apply rounded-2xl p-6 shadow-[0_12px_40px_rgba(2,6,23,0.6)] bg-gradient-to-b;
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 12px;
+  padding: 1rem;
+  background-color: var(--card-bg) !important;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(2,6,23,0.06);
 }
 
-.metric-value { font-size: 2.25rem; font-weight: 800; }
-.metric-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.metric-value { font-size: 2.25rem; font-weight: 800; color: var(--text); }
+.metric-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 
 /* Canvas container to give depth and subtle inner shadow */
 .chart-canvas {
@@ -253,13 +261,11 @@ html, body, #root {
   border-radius: 12px;
   padding: 8px;
 }
-.chart-canvas::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+.chart-canvas {
+  position: relative;
   border-radius: 12px;
-  box-shadow: inset 0 6px 24px rgba(2,6,23,0.6);
+  padding: 8px;
+  background-color: transparent;
 }
 
 /* Sparkline small canvas tweaks */
