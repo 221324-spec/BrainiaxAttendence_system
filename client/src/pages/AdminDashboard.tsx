@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
@@ -123,33 +123,12 @@ export default function AdminDashboard() {
     ],
   };
 
-  // Bar: Department distribution
+  // Department counts (used to decide whether to show the attendance chart)
   const deptCounts: Record<string, number> = {};
   allEmployeesData?.employees?.forEach((e: any) => {
     const d = e.department || 'Unknown';
     deptCounts[d] = (deptCounts[d] || 0) + 1;
   });
-  const barData = {
-    labels: Object.keys(deptCounts),
-    datasets: [
-      {
-        label: 'Employees',
-        data: Object.values(deptCounts),
-        backgroundColor: Object.keys(deptCounts).map((_, i) => `rgba(99,102,241,${0.95 - i * 0.06})`),
-      },
-    ],
-  };
-
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
-    scales: {
-      x: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
-      y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'var(--muted)' } },
-    },
-    elements: { bar: { borderRadius: 12, borderSkipped: false } },
-  };
 
   const doughnutOptions = { cutout: '60%', plugins: { legend: { position: 'top', labels: { color: 'var(--muted)' } } } };
 
