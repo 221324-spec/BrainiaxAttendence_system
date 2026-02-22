@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
@@ -108,6 +110,41 @@ export default function AdminDashboard() {
     { icon: HiOutlineChartBar, value: `${stats?.attendancePercentage ?? 0}%`, label: 'Attendance Rate', bg: 'from-amber-50 to-yellow-50', ring: 'ring-amber-100', iconColor: 'text-amber-500' },
   ];
 
+  // Chart.js registration
+  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+
+  // Doughnut: Present vs Absent
+  const present = stats?.presentToday ?? 0;
+  const total = stats?.totalEmployees ?? 0;
+  const absent = stats?.absentToday ?? Math.max(0, total - present);
+  const doughnutData = {
+    labels: ['Present', 'Absent'],
+    datasets: [
+      {
+        data: [present, absent],
+        backgroundColor: ['#10B981', '#EF4444'],
+        hoverOffset: 6,
+      },
+    ],
+  };
+
+  // Bar: Department distribution
+  const deptCounts: Record<string, number> = {};
+  allEmployeesData?.employees?.forEach((e: any) => {
+    const d = e.department || 'Unknown';
+    deptCounts[d] = (deptCounts[d] || 0) + 1;
+  });
+  const barData = {
+    labels: Object.keys(deptCounts),
+    datasets: [
+      {
+        label: 'Employees',
+        data: Object.values(deptCounts),
+        backgroundColor: Object.keys(deptCounts).map((_, i) => `rgba(99,102,241,${0.7 - i * 0.06})`),
+      },
+    ],
+  };
+
   return (
     <Layout>
       {/* Header with background */}
@@ -157,6 +194,30 @@ export default function AdminDashboard() {
           ))}
         </div>
       )}
+      {/* Charts Overview */}
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="col-span-1 lg:col-span-2 card p-6">
+          <h3 className="text-lg font-bold mb-4">Attendance by Department</h3>
+          {Object.keys(deptCounts).length === 0 ? (
+            <p className="text-sm text-gray-400">No department data available</p>
+          ) : (
+            <div style={{ height: 260 }}>
+              <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+            </div>
+          )}
+        </div>
+
+        <div className="col-span-1 card p-6">
+          <h3 className="text-lg font-bold mb-4">Today: Present vs Absent</h3>
+          <div className="flex items-center justify-center" style={{ height: 220 }}>
+            <Doughnut data={doughnutData} options={{ cutout: '60%' }} />
+          </div>
+          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-green-500 inline-block" /> Present: <span className="ml-2 font-semibold">{present}</span></div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-red-500 inline-block" /> Absent: <span className="ml-2 font-semibold">{absent}</span></div>
+          </div>
+        </div>
+      </div>
 
       {/* CSV Export Card */}
       <div className="card mb-8 animate-slide-up relative overflow-hidden">
