@@ -96,4 +96,18 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async deleteEmployee(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({ message: 'employee id is required' });
+        return;
+      }
+      await AdminService.deleteEmployee(id);
+      res.json({ message: 'Employee removed' });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -69,4 +69,9 @@ export class AdminService {
       .select('name email department')
       .lean();
   }
+
+  /** Soft-delete an employee by marking isActive = false */
+  static async deleteEmployee(employeeId: string): Promise<void> {
+    await User.updateOne({ _id: employeeId, role: 'employee' }, { $set: { isActive: false } });
+  }
 }

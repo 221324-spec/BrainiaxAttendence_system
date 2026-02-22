@@ -29,6 +29,11 @@ export const adminApi = {
     return res.data;
   },
 
+  deleteEmployee: async (employeeId: string): Promise<{ message: string }> => {
+    const res = await api.delete(`/admin/employees/${employeeId}`);
+    return res.data;
+  },
+
   exportCsv: async (
     employeeId: string,
     startDate: string,
@@ -46,3 +51,9 @@ export const adminApi = {
     return res.data;
   },
 };
+
+// also provide a named export for callers that prefer direct import
+export async function deleteEmployee(employeeId: string): Promise<{ message: string }> {
+  const res = await api.delete(`/admin/employees/${employeeId}`);
+  return res.data;
+}

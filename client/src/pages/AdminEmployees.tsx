@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { adminApi } from '../api';
+import { adminApi, deleteEmployee } from '../api';
 import Layout from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineUsers, HiOutlineMail, HiOutlineOfficeBuilding, HiOutlinePlus } from 'react-icons/hi';
@@ -103,7 +103,7 @@ function RemoveButton() {
     const ok = window.confirm(`Remove ${emp.name}? This will deactivate the employee.`);
     if (!ok) return;
     try {
-      await adminApi.deleteEmployee(emp._id);
+      await deleteEmployee(emp._id);
       await queryClient.invalidateQueries({ queryKey: ['admin', 'employees', 'list'] });
       setRemoving(false);
       alert('Employee removed');

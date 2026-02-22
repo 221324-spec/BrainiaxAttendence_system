@@ -11,6 +11,7 @@ router.get('/dashboard', AdminController.getDashboardStats);
 router.get('/employees', AdminController.getAllEmployees);
 router.get('/employees/status', AdminController.getEmployeesWithStatus);
 router.post('/employees', AdminController.createEmployee);
+router.delete('/employees/:id', AdminController.deleteEmployee);
 
 // Manual correction (admin)
 router.post('/attendance/correct', AdminController.adminUpsertAttendance);
