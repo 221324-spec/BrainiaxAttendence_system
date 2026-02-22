@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-// ActivityLine removed per request
+import ActivityLine from '../components/ActivityLine';
 import SmallDonuts from '../components/SmallDonuts';
 import CalendarWidget from '../components/CalendarWidget';
 import {
@@ -218,11 +218,24 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Second row: quick metrics */}
-        <div className="mb-8 grid grid-cols-1 gap-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-bold mb-4">Quick Metrics</h3>
-            <SmallDonuts items={[{ label: 'On-Time', value: 91, color: '#10B981' }, { label: 'Late', value: 9, color: '#ef4444' }, { label: 'Avg Work', value: 78, color: '#f59e0b' }, { label: 'Breaks', value: 12, color: '#06b6d4' }]} />
+        {/* Second row: weekly trend + quick metrics + donut beside it */}
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 card p-6">
+            <h3 className="text-lg font-bold mb-4">Weekly Trend</h3>
+            <ActivityLine />
+          </div>
+          <div className="lg:col-span-4 card p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Quick Metrics</h4>
+                <SmallDonuts items={[{ label: 'On-Time', value: 91, color: '#10B981' }, { label: 'Late', value: 9, color: '#ef4444' }, { label: 'Avg Work', value: 78, color: '#f59e0b' }, { label: 'Breaks', value: 12, color: '#06b6d4' }]} />
+              </div>
+              <div className="flex items-center justify-center">
+                <div style={{ width: 140, height: 140 }}>
+                  <Doughnut data={doughnutData} options={doughnutOptions as any} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </>
