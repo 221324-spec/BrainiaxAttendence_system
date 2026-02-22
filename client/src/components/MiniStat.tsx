@@ -1,4 +1,3 @@
-import React from 'react';
 import Sparkline from './Sparkline';
 
 export default function MiniStat({ title, value, delta, trendData, color }: { title: string; value: string | number; delta?: string; trendData?: number[]; color?: string }) {

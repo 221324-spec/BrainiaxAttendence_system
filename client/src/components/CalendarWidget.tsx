@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 export default function CalendarWidget() {
   // Simple placeholder calendar for overview layout; could be replaced with full calendar lib

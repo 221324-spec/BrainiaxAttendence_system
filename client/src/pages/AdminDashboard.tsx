@@ -11,14 +11,10 @@ import CircleMetric from '../components/CircleMetric';
 import CalendarWidget from '../components/CalendarWidget';
 import {
   HiOutlineUsers,
-  HiOutlineCheckCircle,
-  HiOutlineXCircle,
-  HiOutlineChartBar,
   HiOutlineRefresh,
   HiOutlineDownload,
   HiOutlineClock,
 } from 'react-icons/hi';
-import MiniStat from '../components/MiniStat';
 
 export default function AdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -108,12 +104,7 @@ export default function AdminDashboard() {
       })
     : '--';
 
-  const statCardsData = [
-    { icon: HiOutlineUsers, value: stats?.totalEmployees ?? 0, label: 'Total Employees', color: 'from-primary-600 to-primary-700' },
-    { icon: HiOutlineCheckCircle, value: stats?.presentToday ?? 0, label: 'Present Today', color: 'from-emerald-500 to-emerald-600' },
-    { icon: HiOutlineXCircle, value: stats?.absentToday ?? 0, label: 'Absent Today', color: 'from-red-500 to-rose-500' },
-    { icon: HiOutlineChartBar, value: `${stats?.attendancePercentage ?? 0}%`, label: 'Attendance Rate', color: 'from-amber-400 to-amber-500' },
-  ];
+  // (stat card data removed — using richer widgets below)
 
   // Chart.js registration
   ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
@@ -127,14 +118,7 @@ export default function AdminDashboard() {
     datasets: [
       {
         data: [present, absent],
-        backgroundColor: (ctx: any) => {
-          const c = ctx.chart.ctx;
-          const w = ctx.chart.width;
-          const gradient = c.createLinearGradient(0, 0, w, 0);
-          gradient.addColorStop(0, '#10B981');
-          gradient.addColorStop(1, '#059669');
-          return [gradient, '#ef4444cc'];
-        },
+        backgroundColor: ['#10B981', '#ef4444cc'],
         hoverOffset: 8,
       },
     ],
@@ -152,14 +136,7 @@ export default function AdminDashboard() {
       {
         label: 'Employees',
         data: Object.values(deptCounts),
-        backgroundColor: (ctx: any) => {
-          const c = ctx.chart.ctx;
-          const h = ctx.chart.height;
-          const gradient = c.createLinearGradient(0, 0, 0, h);
-          gradient.addColorStop(0, 'rgba(99,102,241,0.95)');
-          gradient.addColorStop(1, 'rgba(99,102,241,0.5)');
-          return gradient;
-        },
+        backgroundColor: Object.keys(deptCounts).map((_, i) => `rgba(99,102,241,${0.95 - i * 0.06})`),
       },
     ],
   };
@@ -214,7 +191,7 @@ export default function AdminDashboard() {
           <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-primary-100 border-t-primary-600" />
         </div>
       ) : (
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <>
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 chart-card p-6">
             <h3 className="text-lg font-bold mb-4">Activity</h3>
@@ -279,6 +256,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      </>
       )}
       {/* Charts Overview */}
       <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -288,15 +266,15 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-400">No department data available</p>
           ) : (
             <div className="chart-canvas" style={{ height: 300 }}>
-              <Bar data={barData} options={barOptions} />
+              <Bar data={barData} options={barOptions as any} />
             </div>
           )}
         </div>
 
         <div className="col-span-1 chart-card">
           <h3 className="text-lg font-bold mb-4">Today: Present vs Absent</h3>
-          <div className="chart-canvas flex items-center justify-center" style={{ height: 260 }}>
-            <Doughnut data={doughnutData} options={doughnutOptions} />
+            <div className="chart-canvas flex items-center justify-center" style={{ height: 260 }}>
+            <Doughnut data={doughnutData} options={doughnutOptions as any} />
           </div>
           <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-green-500 inline-block" /> Present: <span className="ml-2 font-semibold">{present}</span></div>
