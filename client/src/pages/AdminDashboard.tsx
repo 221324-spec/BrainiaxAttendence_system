@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
@@ -105,8 +105,8 @@ export default function AdminDashboard() {
 
   // (stat card data removed — using richer widgets below)
 
-  // Chart.js registration
-  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
+  // Chart.js registration (include BarElement for horizontal bars)
+  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
   // Doughnut: Present vs Absent
   const present = stats?.presentToday ?? 0;
   const total = stats?.totalEmployees ?? 0;
@@ -123,14 +123,14 @@ export default function AdminDashboard() {
   };
 
 
-  // Department counts (used to build department doughnut)
+  // Department counts (used to build horizontal bar chart)
   const deptCounts: Record<string, number> = {};
   allEmployeesData?.employees?.forEach((e: any) => {
     const d = e.department || 'Unknown';
     deptCounts[d] = (deptCounts[d] || 0) + 1;
   });
 
-  const deptDoughnutData = {
+  const barData = {
     labels: Object.keys(deptCounts),
     datasets: [
       {
@@ -138,6 +138,18 @@ export default function AdminDashboard() {
         backgroundColor: Object.keys(deptCounts).map((_, i) => `hsl(${(i * 60) % 360}, 70%, 50%)`),
       },
     ],
+  };
+
+  const barOptions = {
+    indexAxis: 'y' as const,
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'nearest' } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
+      y: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
+    },
+    elements: { bar: { borderRadius: 4, borderSkipped: false } },
   };
 
   const doughnutOptions = { cutout: '60%', plugins: { legend: { position: 'top', labels: { color: 'var(--muted)' } } } };
@@ -239,8 +251,8 @@ export default function AdminDashboard() {
           {Object.keys(deptCounts).length === 0 ? (
             <p className="text-sm text-gray-400">No department data available</p>
           ) : (
-            <div className="chart-canvas flex items-center justify-center" style={{ height: 300 }}>
-              <Doughnut data={deptDoughnutData} options={doughnutOptions as any} />
+            <div className="chart-canvas" style={{ height: 300 }}>
+              <Bar data={barData} options={barOptions as any} />
             </div>
           )}
         </div>
