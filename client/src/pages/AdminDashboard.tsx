@@ -14,6 +14,7 @@ import {
   HiOutlineDownload,
   HiOutlineClock,
 } from 'react-icons/hi';
+import MiniStat from '../components/MiniStat';
 
 export default function AdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -209,14 +210,19 @@ export default function AdminDashboard() {
           <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-primary-100 border-t-primary-600" />
         </div>
       ) : (
-        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCardsData.map((card, i) => (
-            <div key={card.label} className={`stagger-${i + 1} card bg-gradient-to-br ${card.bg} ring-1 ${card.ring} flex flex-col items-center gap-2.5 py-6 hover:shadow-md transition-all`}>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl stat-icon-bg shadow-sm">
-                <card.icon className={`h-7 w-7 ${card.iconColor}`} />
+            <div key={card.label} className="metric-card">
+              <div className="flex items-center gap-4">
+                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center`} style={{ backgroundImage: `linear-gradient(135deg, var(--primary-600), var(--primary-700))` }}>
+                  <card.icon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400">{card.label}</div>
+                  <div className="text-2xl font-extrabold">{card.value}</div>
+                </div>
               </div>
-              <p className="text-3xl font-extrabold stat-value">{card.value}</p>
-              <p className="text-[11px] font-semibold stat-label uppercase tracking-widest">{card.label}</p>
+              <MiniStat title="Trend" value="" trendData={[1, 3, 2, 4, 6, 5, 7]} color="#60a5fa" />
             </div>
           ))}
         </div>

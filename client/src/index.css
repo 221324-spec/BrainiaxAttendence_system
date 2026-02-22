@@ -261,3 +261,11 @@ html, body, #root {
   border-radius: 12px;
   box-shadow: inset 0 6px 24px rgba(2,6,23,0.6);
 }
+
+/* Sparkline small canvas tweaks */
+.sparkline-canvas canvas { width: 100% !important; height: 100% !important; }
+
+/* Metric / mini card specific styles */
+.metric-card { display: flex; align-items: center; justify-content: space-between; }
+.metric-card .metric-value { color: var(--text); }
+.metric-card .text-gray-400 { color: var(--muted) !important; }
