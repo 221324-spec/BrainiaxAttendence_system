@@ -104,10 +104,10 @@ export default function AdminDashboard() {
     : '--';
 
   const statCardsData = [
-    { icon: HiOutlineUsers, value: stats?.totalEmployees ?? 0, label: 'Total Employees', bg: 'from-primary-50 to-blue-50', ring: 'ring-primary-100', iconColor: 'text-primary-500' },
-    { icon: HiOutlineCheckCircle, value: stats?.presentToday ?? 0, label: 'Present Today', bg: 'from-emerald-50 to-green-50', ring: 'ring-emerald-100', iconColor: 'text-emerald-500' },
-    { icon: HiOutlineXCircle, value: stats?.absentToday ?? 0, label: 'Absent Today', bg: 'from-red-50 to-rose-50', ring: 'ring-red-100', iconColor: 'text-red-500' },
-    { icon: HiOutlineChartBar, value: `${stats?.attendancePercentage ?? 0}%`, label: 'Attendance Rate', bg: 'from-amber-50 to-yellow-50', ring: 'ring-amber-100', iconColor: 'text-amber-500' },
+    { icon: HiOutlineUsers, value: stats?.totalEmployees ?? 0, label: 'Total Employees', color: 'from-primary-600 to-primary-700' },
+    { icon: HiOutlineCheckCircle, value: stats?.presentToday ?? 0, label: 'Present Today', color: 'from-emerald-500 to-emerald-600' },
+    { icon: HiOutlineXCircle, value: stats?.absentToday ?? 0, label: 'Absent Today', color: 'from-red-500 to-rose-500' },
+    { icon: HiOutlineChartBar, value: `${stats?.attendancePercentage ?? 0}%`, label: 'Attendance Rate', color: 'from-amber-400 to-amber-500' },
   ];
 
   // Chart.js registration
@@ -122,8 +122,15 @@ export default function AdminDashboard() {
     datasets: [
       {
         data: [present, absent],
-        backgroundColor: ['#10B981', '#EF4444'],
-        hoverOffset: 6,
+        backgroundColor: (ctx: any) => {
+          const c = ctx.chart.ctx;
+          const w = ctx.chart.width;
+          const gradient = c.createLinearGradient(0, 0, w, 0);
+          gradient.addColorStop(0, '#10B981');
+          gradient.addColorStop(1, '#059669');
+          return [gradient, '#ef4444cc'];
+        },
+        hoverOffset: 8,
       },
     ],
   };
@@ -140,10 +147,30 @@ export default function AdminDashboard() {
       {
         label: 'Employees',
         data: Object.values(deptCounts),
-        backgroundColor: Object.keys(deptCounts).map((_, i) => `rgba(99,102,241,${0.7 - i * 0.06})`),
+        backgroundColor: (ctx: any) => {
+          const c = ctx.chart.ctx;
+          const h = ctx.chart.height;
+          const gradient = c.createLinearGradient(0, 0, 0, h);
+          gradient.addColorStop(0, 'rgba(99,102,241,0.95)');
+          gradient.addColorStop(1, 'rgba(99,102,241,0.5)');
+          return gradient;
+        },
       },
     ],
   };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
+      y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'var(--muted)' } },
+    },
+    elements: { bar: { borderRadius: 12, borderSkipped: false } },
+  };
+
+  const doughnutOptions = { cutout: '60%', plugins: { legend: { position: 'top', labels: { color: 'var(--muted)' } } } };
 
   return (
     <Layout>
@@ -196,23 +223,23 @@ export default function AdminDashboard() {
       )}
       {/* Charts Overview */}
       <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="col-span-1 lg:col-span-2 card p-6">
+        <div className="col-span-1 lg:col-span-2 chart-card">
           <h3 className="text-lg font-bold mb-4">Attendance by Department</h3>
           {Object.keys(deptCounts).length === 0 ? (
             <p className="text-sm text-gray-400">No department data available</p>
           ) : (
-            <div style={{ height: 260 }}>
-              <Bar data={barData} options={{ responsive: true, maintainAspectRatio: false }} />
+            <div className="chart-canvas" style={{ height: 300 }}>
+              <Bar data={barData} options={barOptions} />
             </div>
           )}
         </div>
 
-        <div className="col-span-1 card p-6">
+        <div className="col-span-1 chart-card">
           <h3 className="text-lg font-bold mb-4">Today: Present vs Absent</h3>
-          <div className="flex items-center justify-center" style={{ height: 220 }}>
-            <Doughnut data={doughnutData} options={{ cutout: '60%' }} />
+          <div className="chart-canvas flex items-center justify-center" style={{ height: 260 }}>
+            <Doughnut data={doughnutData} options={doughnutOptions} />
           </div>
-          <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+          <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-green-500 inline-block" /> Present: <span className="ml-2 font-semibold">{present}</span></div>
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-red-500 inline-block" /> Absent: <span className="ml-2 font-semibold">{absent}</span></div>
           </div>
