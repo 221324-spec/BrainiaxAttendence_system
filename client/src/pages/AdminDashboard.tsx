@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale } from 'chart.js';
-import { Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import ActivityLine from '../components/ActivityLine';
+// ActivityLine removed per request
 import SmallDonuts from '../components/SmallDonuts';
 import CalendarWidget from '../components/CalendarWidget';
 import {
@@ -105,8 +105,8 @@ export default function AdminDashboard() {
 
   // (stat card data removed — using richer widgets below)
 
-  // Chart.js registration
-  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
+  // Chart.js registration (include BarElement for department bar)
+  ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
   // Doughnut: Present vs Absent
   const present = stats?.presentToday ?? 0;
@@ -123,12 +123,35 @@ export default function AdminDashboard() {
     ],
   };
 
-  // Department counts (used to decide whether to show the attendance chart)
+  // Department counts (used to build department bar chart)
   const deptCounts: Record<string, number> = {};
   allEmployeesData?.employees?.forEach((e: any) => {
     const d = e.department || 'Unknown';
     deptCounts[d] = (deptCounts[d] || 0) + 1;
   });
+
+  // Bar: Department distribution (restored)
+  const barData = {
+    labels: Object.keys(deptCounts),
+    datasets: [
+      {
+        label: 'Employees',
+        data: Object.values(deptCounts),
+        backgroundColor: Object.keys(deptCounts).map((_, i) => `rgba(99,102,241,${0.95 - i * 0.06})`),
+      },
+    ],
+  };
+
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
+      y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'var(--muted)' } },
+    },
+    elements: { bar: { borderRadius: 12, borderSkipped: false } },
+  };
 
   const doughnutOptions = { cutout: '60%', plugins: { legend: { position: 'top', labels: { color: 'var(--muted)' } } } };
 
@@ -172,8 +195,21 @@ export default function AdminDashboard() {
         <>
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 card p-6">
-            <h3 className="text-lg font-bold mb-4">Activity</h3>
-            <ActivityLine />
+            <h3 className="text-lg font-bold mb-4">Attendance Overview</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 bg-white rounded-lg shadow-sm">
+                <p className="text-sm text-gray-500">Present</p>
+                <p className="text-2xl font-bold">{present}</p>
+              </div>
+              <div className="p-4 bg-white rounded-lg shadow-sm">
+                <p className="text-sm text-gray-500">Absent</p>
+                <p className="text-2xl font-bold">{absent}</p>
+              </div>
+              <div className="p-4 bg-white rounded-lg shadow-sm">
+                <p className="text-sm text-gray-500">Total Employees</p>
+                <p className="text-2xl font-bold">{total}</p>
+              </div>
+            </div>
           </div>
 
           {/* Right column: calendar + small event cards (col-span 4) */}
@@ -199,7 +235,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-400">No department data available</p>
           ) : (
             <div className="chart-canvas" style={{ height: 300 }}>
-              <ActivityLine />
+              <Bar data={barData} options={barOptions as any} />
             </div>
           )}
         </div>
