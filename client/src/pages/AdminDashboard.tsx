@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
+import { Doughnut } from 'react-chartjs-2';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
@@ -203,13 +203,9 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Second row: line + donuts */}
-        <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 card p-6">
-            <h3 className="text-lg font-bold mb-4">Weekly Trend</h3>
-            <ActivityLine />
-          </div>
-          <div className="lg:col-span-4 card p-6">
+        {/* Second row: quick metrics */}
+        <div className="mb-8 grid grid-cols-1 gap-6">
+          <div className="card p-6">
             <h3 className="text-lg font-bold mb-4">Quick Metrics</h3>
             <SmallDonuts items={[{ label: 'On-Time', value: 91, color: '#10B981' }, { label: 'Late', value: 9, color: '#ef4444' }, { label: 'Avg Work', value: 78, color: '#f59e0b' }, { label: 'Breaks', value: 12, color: '#06b6d4' }]} />
           </div>
@@ -224,7 +220,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-400">No department data available</p>
           ) : (
             <div className="chart-canvas" style={{ height: 300 }}>
-              <Bar data={barData} options={barOptions as any} />
+              <ActivityLine />
             </div>
           )}
         </div>
