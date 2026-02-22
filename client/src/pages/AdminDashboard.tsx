@@ -7,7 +7,6 @@ import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
 import ActivityLine from '../components/ActivityLine';
 import SmallDonuts from '../components/SmallDonuts';
-import CircleMetric from '../components/CircleMetric';
 import CalendarWidget from '../components/CalendarWidget';
 import {
   HiOutlineUsers,
@@ -199,7 +198,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Right column: calendar + small event cards (col-span 4) */}
-          <div className="lg:col-span-4 p-4">
+          <div className="lg:col-span-4 card p-4">
             <CalendarWidget />
           </div>
         </div>
@@ -210,12 +209,9 @@ export default function AdminDashboard() {
             <h3 className="text-lg font-bold mb-4">Weekly Trend</h3>
             <ActivityLine />
           </div>
-          <div className="lg:col-span-4 p-6">
+          <div className="lg:col-span-4 card p-6">
             <h3 className="text-lg font-bold mb-4">Quick Metrics</h3>
             <SmallDonuts items={[{ label: 'On-Time', value: 91, color: '#10B981' }, { label: 'Late', value: 9, color: '#ef4444' }, { label: 'Avg Work', value: 78, color: '#f59e0b' }, { label: 'Breaks', value: 12, color: '#06b6d4' }]} />
-            <div className="mt-6">
-              <CircleMetric value={Math.round(stats?.attendancePercentage ?? 0)} label="Attendance Rate" color="#06b6d4" />
-            </div>
           </div>
         </div>
       </>
