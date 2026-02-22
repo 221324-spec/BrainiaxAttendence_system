@@ -1,8 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import Layout from '../components/Layout';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineUsers, HiOutlineMail, HiOutlineOfficeBuilding, HiOutlinePlus } from 'react-icons/hi';
+import { HiOutlineTrash } from 'react-icons/hi';
+import { useState } from 'react';
 
 export default function AdminEmployees() {
   const navigate = useNavigate();
@@ -29,13 +31,16 @@ export default function AdminEmployees() {
             {data ? `${data.employees.length} registered employees` : 'All registered employees in the system'}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/admin/employees/add')}
-          className="btn-primary flex items-center gap-2"
-        >
-          <HiOutlinePlus className="h-4 w-4" />
-          Add Employee
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/admin/employees/add')}
+            className="btn-primary flex items-center gap-2"
+          >
+            <HiOutlinePlus className="h-4 w-4" />
+            Add Employee
+          </button>
+          <RemoveButton />
+        </div>
       </div>
 
       {isLoading ? (
@@ -82,5 +87,42 @@ export default function AdminEmployees() {
         </div>
       )}
     </Layout>
+  );
+}
+
+function RemoveButton() {
+  const [removing, setRemoving] = useState(false);
+  const queryClient = useQueryClient();
+  const { data } = useQuery({ queryKey: ['admin', 'employees', 'list'], queryFn: () => adminApi.getEmployees() });
+
+  const handleRemoveMode = () => setRemoving((s) => !s);
+
+  const removeFirst = async () => {
+    if (!data || !data.employees.length) return;
+    const emp = data.employees[0];
+    const ok = window.confirm(`Remove ${emp.name}? This will deactivate the employee.`);
+    if (!ok) return;
+    try {
+      await adminApi.deleteEmployee(emp._id);
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'employees', 'list'] });
+      setRemoving(false);
+      alert('Employee removed');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to remove employee');
+    }
+  };
+
+  return (
+    <>
+      <button onClick={handleRemoveMode} className={`btn-outline ${removing ? 'bg-red-50 text-red-600' : ''} flex items-center gap-2`}>
+        <HiOutlineTrash className="h-4 w-4" />
+        {removing ? 'Cancel' : 'Remove Employee'}
+      </button>
+      {removing && (
+        <button onClick={removeFirst} className="btn-danger ml-2">
+          Remove first
+        </button>
+      )}
+    </>
   );
 }
