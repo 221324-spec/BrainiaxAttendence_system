@@ -138,20 +138,31 @@ export default function AdminDashboard() {
       {
         data: Object.values(deptCounts),
         backgroundColor: Object.keys(deptCounts).map(() => barColor),
+        barThickness: 36,
       },
     ],
   };
-
   const barOptions = {
-    indexAxis: 'y' as const,
+    // vertical bars with clean styling
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { mode: 'nearest' } },
-    scales: {
-      x: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
-      y: { grid: { display: false }, ticks: { color: 'var(--muted)' } },
+    plugins: {
+      legend: { display: false },
+      tooltip: { mode: 'index', intersect: false },
     },
-    elements: { bar: { borderRadius: 4, borderSkipped: false } },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: 'var(--muted)', padding: 8 },
+      },
+      y: {
+        grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false },
+        ticks: { color: 'var(--muted)', beginAtZero: true, stepSize: undefined, padding: 8 },
+      },
+    },
+    elements: {
+      bar: { borderRadius: 8, borderSkipped: false },
+    },
   };
 
   const doughnutOptions = { cutout: '60%', plugins: { legend: { position: 'top', labels: { color: 'var(--muted)' } } } };
