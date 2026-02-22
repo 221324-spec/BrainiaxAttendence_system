@@ -53,7 +53,24 @@ export default function AdminEmployees() {
             const initials = emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
             const color = colors[i % colors.length];
             return (
-              <div key={emp._id} className={`stagger-${(i % 5) + 1} card hover:shadow-lg transition-all hover:-translate-y-0.5 group`}>
+              <div key={emp._id} className={`stagger-${(i % 5) + 1} card hover:shadow-lg transition-all hover:-translate-y-0.5 group relative`}>
+                <button
+                  title="Remove employee"
+                  className="absolute top-2 right-2 p-1 rounded-full bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-800 transition-colors z-10"
+                  onClick={async () => {
+                    const ok = window.confirm(`Remove ${emp.name}? This will deactivate the employee.`);
+                    if (!ok) return;
+                    try {
+                      await deleteEmployee(emp._id);
+                      await queryClient.invalidateQueries({ queryKey: ['admin', 'employees', 'list'] });
+                      alert('Employee removed');
+                    } catch (err: any) {
+                      alert(err?.message || 'Failed to remove employee');
+                    }
+                  }}
+                >
+                  <HiOutlineTrash className="h-5 w-5" />
+                </button>
                 <div className="flex items-start gap-4">
                   <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${color} text-white text-sm font-bold shadow-lg shadow-gray-200/50`}>
                     {initials}
