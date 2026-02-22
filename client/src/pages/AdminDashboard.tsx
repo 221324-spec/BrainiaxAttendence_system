@@ -193,7 +193,7 @@ export default function AdminDashboard() {
       ) : (
         <>
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 p-6">
+          <div className="lg:col-span-8 card p-6">
             <h3 className="text-lg font-bold mb-4">Activity</h3>
             <ActivityLine />
           </div>
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
 
         {/* Second row: line + donuts */}
         <div className="mb-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 p-6">
+          <div className="lg:col-span-8 card p-6">
             <h3 className="text-lg font-bold mb-4">Weekly Trend</h3>
             <ActivityLine />
           </div>

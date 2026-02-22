@@ -10,14 +10,15 @@ export default function ActivityLine({ labels = [], values = [] }: { labels?: st
       {
         label: 'Check-ins',
         data: values.length ? values : [120, 200, 150, 220, 300, 270, 320],
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.08)',
+        // Use a professional primary color and subtle fill
+        borderColor: '#1d4ed8',
+        backgroundColor: 'rgba(29,78,216,0.06)',
         tension: 0.35,
-        pointRadius: 3,
-        pointBackgroundColor: '#fff',
-        pointBorderColor: '#3b82f6',
-        borderWidth: 2,
-        fill: true,
+        pointRadius: 4,
+        pointBackgroundColor: '#1d4ed8',
+        pointBorderColor: '#ffffff',
+        borderWidth: 2.5,
+        fill: false,
       },
     ],
   };
