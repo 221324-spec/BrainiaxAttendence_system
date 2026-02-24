@@ -14,5 +14,6 @@ router.post('/break-end', AttendanceController.endBreak);
 router.get('/today', AttendanceController.getTodayStatus);
 router.get('/history', AttendanceController.getMonthlyHistory);
 router.get('/summary', AttendanceController.getMonthlySummary);
+router.get('/export-csv', AttendanceController.exportOwnCsv);
 
 export default router;

@@ -31,7 +31,7 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-primary-200/50 transition-all duration-200 hover:from-primary-700 hover:to-primary-800 hover:shadow-lg hover:shadow-primary-300/50 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:from-indigo-700 hover:to-indigo-800 hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
   }
 
   .btn-secondary {
@@ -55,7 +55,7 @@
   }
 
   .input {
-    @apply block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-all duration-200 focus:border-primary-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    @apply block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm placeholder-gray-400 shadow-sm transition-all duration-200 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20;
   }
 
   .label {
@@ -144,8 +144,8 @@
   --muted: #6b7280;
   --border: rgba(15,23,42,0.06);
   --input-bg: rgba(243,244,246,0.8);
-  --primary-600: #2563eb;
-  --primary-700: #1d4ed8;
+  --primary-600: #4f46e5;
+  --primary-700: #4338ca;
 }
 
 
@@ -156,24 +156,27 @@
   --muted: #6b7280;
   --border: rgba(15,23,42,0.06);
   --input-bg: rgba(243,244,246,0.6);
-  --primary-600: #2563eb;
-  --primary-700: #1d4ed8;
+  --primary-600: #4f46e5;
+  --primary-700: #4338ca;
   --glass-bg: rgba(255,255,255,0.8);
 }
 
 [data-theme="dark"] {
-  /* Strong black background for true dark mode */
-  --bg: #000000;
-  --card-bg: #0b0b0b;
-  --text: #ffffff;
-  /* Muted text slightly desaturated white for secondary text */
-  --muted: #9aa4b2;
-  --border: rgba(255,255,255,0.06);
-  --input-bg: rgba(255,255,255,0.02);
-  /* Use a subtle teal/sky primary for accents in dark mode */
-  --primary-600: #06b6d4;
-  --primary-700: #0891b2;
-  --glass-bg: rgba(255,255,255,0.03);
+  --bg: #0a0a0f;
+  --card-bg: #13131a;
+  --text: #f1f1f4;
+  --muted: #8b8fa3;
+  --border: rgba(255,255,255,0.08);
+  --input-bg: rgba(255,255,255,0.05);
+  --primary-600: #818cf8;
+  --primary-700: #6366f1;
+  --glass-bg: rgba(19,19,26,0.85);
+  --icon-bg-indigo: rgba(99,102,241,0.15);
+  --icon-bg-emerald: rgba(16,185,129,0.15);
+  --icon-bg-rose: rgba(244,63,94,0.15);
+  --icon-bg-cyan: rgba(6,182,212,0.15);
+  --icon-bg-amber: rgba(245,158,11,0.15);
+  --shadow-color: transparent;
 }
 
 /* Apply the theme variables to base elements */
@@ -218,6 +221,105 @@ html, body, #root {
   background-color: var(--card-bg) !important;
 }
 
+/* Dark mode: neutralize colored light-mode shadows */
+[data-theme="dark"] .app-root .shadow-sm,
+[data-theme="dark"] .app-root .shadow-md,
+[data-theme="dark"] .app-root .shadow-lg,
+[data-theme="dark"] .app-root .shadow-xl {
+  --tw-shadow-color: transparent !important;
+}
+[data-theme="dark"] .shadow-indigo-200\/50,
+[data-theme="dark"] .shadow-indigo-300\/50,
+[data-theme="dark"] .shadow-emerald-200\/50,
+[data-theme="dark"] .shadow-emerald-300\/50,
+[data-theme="dark"] .shadow-red-200\/50,
+[data-theme="dark"] .shadow-red-300\/50,
+[data-theme="dark"] .shadow-amber-200\/50,
+[data-theme="dark"] .shadow-amber-300\/50,
+[data-theme="dark"] .shadow-primary-200\/50,
+[data-theme="dark"] .shadow-primary-300\/50,
+[data-theme="dark"] .shadow-gray-200\/50 {
+  --tw-shadow-color: transparent !important;
+}
+
+/* Dark mode: adapt light-only icon backgrounds */
+[data-theme="dark"] .app-root .bg-indigo-50 { background-color: rgba(99,102,241,0.15) !important; }
+[data-theme="dark"] .app-root .bg-emerald-50 { background-color: rgba(16,185,129,0.15) !important; }
+[data-theme="dark"] .app-root .bg-rose-50 { background-color: rgba(244,63,94,0.15) !important; }
+[data-theme="dark"] .app-root .bg-cyan-50 { background-color: rgba(6,182,212,0.15) !important; }
+[data-theme="dark"] .app-root .bg-amber-50 { background-color: rgba(245,158,11,0.15) !important; }
+[data-theme="dark"] .app-root .bg-red-50 { background-color: rgba(239,68,68,0.12) !important; }
+[data-theme="dark"] .app-root .bg-violet-50 { background-color: rgba(139,92,246,0.15) !important; }
+[data-theme="dark"] .app-root .bg-orange-50 { background-color: rgba(249,115,22,0.15) !important; }
+
+/* Dark mode: gradient backgrounds that look white in dark */
+[data-theme="dark"] .app-root [class*="from-primary-50"],
+[data-theme="dark"] .app-root [class*="from-indigo-50"],
+[data-theme="dark"] .app-root [class*="from-emerald-50"],
+[data-theme="dark"] .app-root [class*="from-red-50"],
+[data-theme="dark"] .app-root [class*="from-amber-50"],
+[data-theme="dark"] .app-root [class*="from-orange-50"] {
+  --tw-gradient-from: transparent !important;
+  --tw-gradient-to: transparent !important;
+}
+
+/* Dark mode: borders */
+[data-theme="dark"] .app-root .border-gray-100,
+[data-theme="dark"] .app-root .border-gray-200,
+[data-theme="dark"] .app-root .border-gray-200\/60,
+[data-theme="dark"] .app-root .border-gray-50,
+[data-theme="dark"] .app-root .border-gray-50\/80 {
+  border-color: var(--border) !important;
+}
+
+/* Dark mode: hover backgrounds */
+[data-theme="dark"] .app-root .hover\:bg-gray-50:hover {
+  background-color: rgba(255,255,255,0.05) !important;
+}
+[data-theme="dark"] .app-root .hover\:bg-gray-50\/50:hover,
+[data-theme="dark"] .app-root .bg-gray-50\/50 {
+  background-color: rgba(255,255,255,0.03) !important;
+}
+[data-theme="dark"] .app-root .bg-gray-100 {
+  background-color: rgba(255,255,255,0.08) !important;
+}
+[data-theme="dark"] .app-root .bg-gray-50 {
+  background-color: rgba(255,255,255,0.05) !important;
+}
+
+/* Dark mode: ring colors */
+[data-theme="dark"] .app-root .ring-gray-900\/5 {
+  --tw-ring-color: rgba(255,255,255,0.06) !important;
+}
+[data-theme="dark"] .app-root .ring-1 {
+  --tw-ring-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Dark mode: text that stays dark (gray-300 used for placeholder) */
+[data-theme="dark"] .app-root .text-gray-300 {
+  color: #4b5563 !important;
+}
+
+/* Dark mode: badges need readable colors */
+[data-theme="dark"] .badge-success { background-color: rgba(16,185,129,0.15) !important; color: #6ee7b7 !important; }
+[data-theme="dark"] .badge-warning { background-color: rgba(245,158,11,0.15) !important; color: #fcd34d !important; }
+[data-theme="dark"] .badge-danger { background-color: rgba(239,68,68,0.15) !important; color: #fca5a5 !important; }
+[data-theme="dark"] .badge-neutral { background-color: rgba(255,255,255,0.08) !important; color: #d1d5db !important; }
+
+/* Dark mode: decorative blurred circles */
+[data-theme="dark"] .app-root [class*="blur-2xl"],
+[data-theme="dark"] .app-root [class*="blur-3xl"] {
+  opacity: 0.15 !important;
+}
+
+/* Dark mode: scrollbar */
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background-color: #333 !important;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background-color: #555 !important;
+}
+
 /* Ensure table headers/cells use theme colors */
 .app-root .table-header { color: var(--muted) !important; }
 .app-root .table-cell { color: var(--text) !important; }
@@ -231,47 +333,17 @@ html, body, #root {
 .primary-bg { background-image: linear-gradient(90deg, var(--primary-600), var(--primary-700)); }
 .primary { color: var(--primary-600); }
 
-/* Enhanced metric/card styles for modern dashboard */
-/* Metric/card visual - flat and professional */
-.metric-card {
-  border-radius: 12px;
-  padding: 1rem;
-  background-color: var(--card-bg) !important;
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(2,6,23,0.06);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+/* Individual stagger animation classes */
+.stagger-1 { animation: fade-in 0.3s ease-out 0ms both; }
+.stagger-2 { animation: fade-in 0.3s ease-out 60ms both; }
+.stagger-3 { animation: fade-in 0.3s ease-out 120ms both; }
+.stagger-4 { animation: fade-in 0.3s ease-out 180ms both; }
+.stagger-5 { animation: fade-in 0.3s ease-out 240ms both; }
 
-.chart-card {
-  border-radius: 12px;
-  padding: 1rem;
-  background-color: var(--card-bg) !important;
-  border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(2,6,23,0.06);
-}
-
-.metric-value { font-size: 2.25rem; font-weight: 800; color: var(--text); }
-.metric-label { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-
-/* Canvas container to give depth and subtle inner shadow */
-.chart-canvas {
-  position: relative;
-  border-radius: 12px;
-  padding: 8px;
-}
+/* Chart container helpers */
 .chart-canvas {
   position: relative;
   border-radius: 12px;
   padding: 8px;
   background-color: transparent;
 }
-
-/* Sparkline small canvas tweaks */
-.sparkline-canvas canvas { width: 100% !important; height: 100% !important; }
-
-/* Metric / mini card specific styles */
-.metric-card { display: flex; align-items: center; justify-content: space-between; }
-.metric-card .metric-value { color: var(--text); }
-.metric-card .text-gray-400 { color: var(--muted) !important; }

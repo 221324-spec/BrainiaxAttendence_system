@@ -50,6 +50,11 @@ export const adminApi = {
     const res = await api.post('/admin/attendance/correct', payload);
     return res.data;
   },
+
+  resetPassword: async (employeeId: string, newPassword: string): Promise<{ message: string }> => {
+    const res = await api.patch(`/admin/employees/${employeeId}/reset-password`, { newPassword });
+    return res.data;
+  },
 };
 
 // also provide a named export for callers that prefer direct import

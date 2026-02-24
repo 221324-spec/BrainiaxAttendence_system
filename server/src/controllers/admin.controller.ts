@@ -110,4 +110,27 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async resetEmployeePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { newPassword } = req.body;
+      if (!id || !newPassword) {
+        res.status(400).json({ message: 'Employee id and newPassword are required' });
+        return;
+      }
+      if (newPassword.length < 6) {
+        res.status(400).json({ message: 'Password must be at least 6 characters' });
+        return;
+      }
+      const { email } = await AdminService.resetEmployeePassword(id, newPassword);
+      res.json({ message: `Password reset successfully for ${email}` });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
 }

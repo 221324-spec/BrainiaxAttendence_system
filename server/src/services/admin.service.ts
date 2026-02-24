@@ -1,5 +1,6 @@
 import { User, Attendance } from '../models';
 import { AttendanceService } from './attendance.service';
+import argon2 from 'argon2';
 
 export class AdminService {
   /**
@@ -73,5 +74,15 @@ export class AdminService {
   /** Soft-delete an employee by marking isActive = false */
   static async deleteEmployee(employeeId: string): Promise<void> {
     await User.updateOne({ _id: employeeId, role: 'employee' }, { $set: { isActive: false } });
+  }
+
+  /** Reset an employee's password to a new value */
+  static async resetEmployeePassword(employeeId: string, newPassword: string): Promise<{ email: string }> {
+    const user = await User.findOne({ _id: employeeId, role: 'employee', isActive: true });
+    if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
+    const hashed = await argon2.hash(newPassword);
+    user.password = hashed;
+    await user.save();
+    return { email: user.email };
   }
 }

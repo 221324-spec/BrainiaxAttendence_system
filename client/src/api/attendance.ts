@@ -46,4 +46,12 @@ export const attendanceApi = {
     });
     return res.data;
   },
+
+  exportCsv: async (startDate: string, endDate: string): Promise<Blob> => {
+    const res = await api.get('/attendance/export-csv', {
+      params: { startDate, endDate },
+      responseType: 'blob',
+    });
+    return res.data;
+  },
 };

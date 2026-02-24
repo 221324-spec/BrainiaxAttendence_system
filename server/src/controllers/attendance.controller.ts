@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AttendanceService } from '../services';
+import { AttendanceService, CsvService } from '../services';
 
 export class AttendanceController {
   static async punchIn(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -74,6 +74,36 @@ export class AttendanceController {
         month
       );
       res.json({ summary });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Employee self-service CSV export of own attendance
+   */
+  static async exportOwnCsv(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
+      const userId = req.user!.userId;
+
+      const ipAddress =
+        (req.headers['x-forwarded-for'] as string) ||
+        req.socket.remoteAddress ||
+        '';
+
+      const { csv, filename } = await CsvService.exportEmployeeAttendance(
+        userId,
+        startDate,
+        endDate,
+        userId,
+        ipAddress
+      );
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csv);
     } catch (error) {
       next(error);
     }
