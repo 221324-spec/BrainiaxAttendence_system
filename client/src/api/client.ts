@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Ensure baseURL always ends with /api regardless of env var
+const rawUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const baseURL = rawUrl.endsWith('/api') ? rawUrl : `${rawUrl}/api`;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
