@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { attendanceApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
+import UserProfileModal from '../components/UserProfileModal';
 import toast from 'react-hot-toast';
 import {
   HiOutlineClock,
@@ -98,6 +99,7 @@ export default function EmployeeDashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const now = new Date();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   /* ── Month/Year selector state ── */
   const [selYear, setSelYear] = useState(now.getFullYear());
@@ -222,16 +224,36 @@ export default function EmployeeDashboard() {
     <Layout>
       {/* ── Header ── */}
       <div className="mb-8 animate-fade-in">
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          Good {greeting},{' '}
-          <span className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
-            {user?.name?.split(' ')[0]}
-          </span>
-          !
-        </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
-          {now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight page-heading">
+              Good {greeting},{' '}
+              <span className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">
+                {user?.name?.split(' ')[0]}
+              </span>
+              !
+            </h1>
+            <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
+              {now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          </div>
+          {/* Profile Icon */}
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="group relative h-11 w-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5 shadow-lg shadow-indigo-200/50 dark:shadow-indigo-900/30 ring-2 ring-white/50 dark:ring-white/20 hover:ring-indigo-300 hover:scale-105 transition-all self-start sm:self-center"
+            title="View profile"
+          >
+            <div className="h-full w-full rounded-full overflow-hidden bg-white dark:bg-gray-900 flex items-center justify-center">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt={user?.name} className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-sm font-bold bg-gradient-to-br from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                  {initials}
+                </span>
+              )}
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* ── Profile Card + Time Clock ── */}
@@ -379,10 +401,10 @@ export default function EmployeeDashboard() {
       {summary && (
         <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5 animate-fade-in">
           {statCards.map((card, i) => (
-            <div key={card.label} className={`stagger-${i + 1} card bg-gradient-to-br ${card.bg} ring-1 ${card.ring} flex flex-col items-center gap-2 py-5 hover:shadow-md transition-shadow`}>
+            <div key={card.label} className={`stagger-${i + 1} card stat-card-enhanced bg-gradient-to-br ${card.bg} ring-1 ${card.ring} flex flex-col items-center gap-2 py-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}>
               <card.icon className={`h-8 w-8 text-${card.color}-500`} />
               <p className="text-2xl font-extrabold">{card.value}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--muted)' }}>{card.label}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--muted)' }}>{card.label}</p>
             </div>
           ))}
         </div>
@@ -510,6 +532,11 @@ export default function EmployeeDashboard() {
           </div>
         )}
       </div>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <UserProfileModal onClose={() => setShowProfileModal(false)} />
+      )}
     </Layout>
   );
 }

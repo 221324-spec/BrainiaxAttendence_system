@@ -7,6 +7,10 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminEmployees from './pages/AdminEmployees';
 import AddEmployee from './pages/AddEmployee';
 import AdminAttendanceCorrection from './pages/AdminAttendanceCorrection';
+import AdminPayrollDashboard from './pages/AdminPayrollDashboard';
+import AdminPayrollDetail from './pages/AdminPayrollDetail';
+import AdminPayrollSettings from './pages/AdminPayrollSettings';
+import AdminTodayAttendance from './pages/AdminTodayAttendance';
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -41,6 +45,10 @@ export default function App() {
         <Route path="/admin/employees" element={<AdminEmployees />} />
         <Route path="/admin/add-employee" element={<AddEmployee />} />
         <Route path="/admin/attendance-correction" element={<AdminAttendanceCorrection />} />
+        <Route path="/admin/payroll" element={<AdminPayrollDashboard />} />
+        <Route path="/admin/payroll/:runId" element={<AdminPayrollDetail />} />
+        <Route path="/admin/payroll-settings" element={<AdminPayrollSettings />} />
+        <Route path="/admin/today-attendance" element={<AdminTodayAttendance />} />
       </Route>
 
       {/* Default redirect */}

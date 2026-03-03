@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminApi, deleteEmployee } from '../api';
 import Layout from '../components/Layout';
+import EmployeeProfileModal from '../components/EmployeeProfileModal';
 import { useNavigate } from 'react-router-dom';
-import { HiOutlineUsers, HiOutlineMail, HiOutlinePlus, HiOutlineTrash, HiOutlineKey, HiOutlineX } from 'react-icons/hi';
+import { HiOutlineUsers, HiOutlineMail, HiOutlinePlus, HiOutlineTrash, HiOutlinePencil } from 'react-icons/hi';
 import toast from 'react-hot-toast';
 
 const DEPT_COLORS: Record<string, { bg: string; border: string; badge: string; avatar: string }> = {
@@ -31,29 +32,8 @@ export default function AdminEmployees() {
     queryFn: () => adminApi.getEmployees(),
   });
 
-  // Reset password modal state
-  const [resetTarget, setResetTarget] = useState<{ id: string; name: string } | null>(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [resetting, setResetting] = useState(false);
-
-  const handleResetPassword = async () => {
-    if (!resetTarget) return;
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    setResetting(true);
-    try {
-      const res = await adminApi.resetPassword(resetTarget.id, newPassword);
-      toast.success(res.message);
-      setResetTarget(null);
-      setNewPassword('');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Reset failed');
-    } finally {
-      setResetting(false);
-    }
-  };
+  // Profile modal state
+  const [profileEmployeeId, setProfileEmployeeId] = useState<string | null>(null);
 
   // Group employees by department (only departments that have employees)
   const employees = data?.employees ?? [];
@@ -69,7 +49,7 @@ export default function AdminEmployees() {
     <Layout>
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Employees</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight page-heading">Employees</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--muted)' }}>
             {data ? `${data.employees.length} registered across ${departments.length} departments` : 'Loading employees...'}
           </p>
@@ -120,23 +100,33 @@ export default function AdminEmployees() {
                     const initials = emp.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
                     return (
                       <div key={emp._id} className="px-5 py-3 flex items-center gap-3 group transition-colors hover:bg-gray-50/50">
-                        <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${colors.avatar} text-white text-xs font-bold`}>
-                          {initials}
-                        </div>
-                        <div className="flex-1 min-w-0">
+                        <button
+                          onClick={() => setProfileEmployeeId(emp._id)}
+                          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${colors.avatar} text-white text-xs font-bold overflow-hidden hover:ring-2 hover:ring-indigo-300 transition-all`}
+                        >
+                          {emp.profilePicture ? (
+                            <img src={emp.profilePicture} alt={emp.name} className="h-full w-full object-cover" />
+                          ) : (
+                            initials
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setProfileEmployeeId(emp._id)}
+                          className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+                        >
                           <p className="text-sm font-semibold truncate">{emp.name}</p>
                           <p className="flex items-center gap-1.5 text-xs truncate" style={{ color: 'var(--muted)' }}>
                             <HiOutlineMail className="h-3 w-3 flex-shrink-0" />
                             {emp.email}
                           </p>
-                        </div>
+                        </button>
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
                           <button
-                            title={`Reset password for ${emp.name}`}
-                            className="p-1.5 rounded-lg text-amber-400 hover:text-amber-600 hover:bg-amber-50 transition-all"
-                            onClick={() => { setResetTarget({ id: emp._id, name: emp.name }); setNewPassword(''); }}
+                            title={`Edit profile for ${emp.name}`}
+                            className="p-1.5 rounded-lg text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                            onClick={() => setProfileEmployeeId(emp._id)}
                           >
-                            <HiOutlineKey className="h-4 w-4" />
+                            <HiOutlinePencil className="h-4 w-4" />
                           </button>
                           <button
                             title={`Remove ${emp.name}`}
@@ -164,61 +154,21 @@ export default function AdminEmployees() {
         </div>
       )}
 
-      {/* Reset Password Modal */}
-      {resetTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => { setResetTarget(null); setNewPassword(''); }} />
-          {/* Dialog */}
-          <div className="relative w-full max-w-md rounded-2xl p-6 shadow-xl animate-fade-in" style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border)' }}>
-            <button
-              onClick={() => { setResetTarget(null); setNewPassword(''); }}
-              className="absolute top-4 right-4 p-1 rounded-lg transition-colors hover:bg-gray-100"
-              style={{ color: 'var(--muted)' }}
-            >
-              <HiOutlineX className="h-5 w-5" />
-            </button>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                <HiOutlineKey className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Reset Password</h3>
-                <p className="text-xs" style={{ color: 'var(--muted)' }}>
-                  Set a new password for <strong>{resetTarget.name}</strong>
-                </p>
-              </div>
-            </div>
-            <div className="mb-5">
-              <label className="label">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="input"
-                placeholder="Minimum 6 characters"
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && handleResetPassword()}
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleResetPassword}
-                disabled={resetting || newPassword.length < 6}
-                className="btn-primary flex-1"
-              >
-                {resetting ? 'Resetting...' : 'Reset Password'}
-              </button>
-              <button
-                onClick={() => { setResetTarget(null); setNewPassword(''); }}
-                className="rounded-xl border px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-gray-50"
-                style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Employee Profile Modal */}
+      {profileEmployeeId && (
+        <EmployeeProfileModal
+          employeeId={profileEmployeeId}
+          onClose={() => setProfileEmployeeId(null)}
+          onDelete={async (id: string) => {
+            try {
+              await deleteEmployee(id);
+              await queryClient.invalidateQueries({ queryKey: ['admin', 'employees', 'list'] });
+              toast.success('Employee removed');
+            } catch (err: any) {
+              toast.error(err?.message || 'Failed to remove employee');
+            }
+          }}
+        />
       )}
     </Layout>
   );

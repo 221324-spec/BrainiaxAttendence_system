@@ -14,7 +14,7 @@ import { startMidnightJob } from './cron/midnightJob';
 const app = express();
 
 // Trust proxy headers (required when running behind a proxy like Render)
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Security middleware
 app.use(helmet());
@@ -34,8 +34,8 @@ const limiter = rateLimit({
 app.use('/api/auth', limiter);
 
 // Body parsing
-app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Health check
 app.get('/api/health', (_req, res) => {

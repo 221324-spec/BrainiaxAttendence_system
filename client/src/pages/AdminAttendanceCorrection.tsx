@@ -56,7 +56,7 @@ export default function AdminAttendanceCorrection() {
   return (
     <Layout>
       <div className="mb-8 animate-fade-in">
-        <h1 className="text-2xl font-extrabold tracking-tight">Manual Attendance Correction</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight page-heading">Manual Attendance Correction</h1>
         <p className="mt-1 text-sm text-gray-400">Correct or add attendance records for any employee and date.</p>
       </div>
       <div className="mx-auto max-w-4xl animate-slide-up">

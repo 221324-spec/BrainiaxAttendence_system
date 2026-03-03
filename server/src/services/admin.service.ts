@@ -67,7 +67,7 @@ export class AdminService {
    */
   static async getAllEmployees(): Promise<any[]> {
     return User.find({ role: 'employee', isActive: true })
-      .select('name email department')
+      .select('name email department profilePicture')
       .lean();
   }
 
@@ -82,7 +82,127 @@ export class AdminService {
     if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
     const hashed = await argon2.hash(newPassword);
     user.password = hashed;
+    user.plaintextPassword = newPassword;
     await user.save();
     return { email: user.email };
+  }
+
+  /** Update an employee's salary */
+  static async updateEmployeeSalary(
+    employeeId: string,
+    baseMonthlySalary: number,
+    currency: string = 'PKR'
+  ): Promise<{ name: string; baseMonthlySalary: number; currency: string }> {
+    const user = await User.findOneAndUpdate(
+      { _id: employeeId, role: 'employee', isActive: true },
+      {
+        $set: {
+          baseMonthlySalary,
+          currency,
+          salaryEffectiveFrom: new Date(),
+        },
+      },
+      { new: true }
+    ).select('+baseMonthlySalary +currency');
+    if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
+    return {
+      name: user.name,
+      baseMonthlySalary: user.baseMonthlySalary || 0,
+      currency: user.currency || 'PKR',
+    };
+  }
+
+  /** Get employee salary info */
+  static async getEmployeeSalary(employeeId: string): Promise<{
+    baseMonthlySalary: number;
+    currency: string;
+    salaryEffectiveFrom: Date | null;
+  }> {
+    const user = await User.findOne({ _id: employeeId, role: 'employee', isActive: true })
+      .select('+baseMonthlySalary +currency +salaryEffectiveFrom');
+    if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
+    return {
+      baseMonthlySalary: user.baseMonthlySalary || 0,
+      currency: user.currency || 'PKR',
+      salaryEffectiveFrom: user.salaryEffectiveFrom || null,
+    };
+  }
+
+  /** Get full employee profile (admin view) */
+  static async getEmployeeProfile(employeeId: string): Promise<{
+    _id: string;
+    name: string;
+    email: string;
+    department: string;
+    profilePicture?: string;
+    baseMonthlySalary: number;
+    currency: string;
+    salaryEffectiveFrom: Date | null;
+    plaintextPassword: string;
+    createdAt: Date;
+  }> {
+    const user = await User.findOne({ _id: employeeId, role: 'employee', isActive: true })
+      .select('+baseMonthlySalary +currency +salaryEffectiveFrom +profilePicture +plaintextPassword');
+    if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
+    return {
+      _id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      department: user.department,
+      profilePicture: user.profilePicture,
+      baseMonthlySalary: user.baseMonthlySalary || 0,
+      currency: user.currency || 'PKR',
+      salaryEffectiveFrom: user.salaryEffectiveFrom || null,
+      plaintextPassword: user.plaintextPassword || '',
+      createdAt: user.createdAt,
+    };
+  }
+
+  /** Update employee profile (admin can update all fields) */
+  static async updateEmployeeProfile(
+    employeeId: string,
+    updates: {
+      name?: string;
+      email?: string;
+      department?: string;
+      baseMonthlySalary?: number;
+      currency?: string;
+      profilePicture?: string;
+      password?: string;
+    }
+  ): Promise<{ name: string; email: string }> {
+    const updateData: any = {};
+    if (updates.name) updateData.name = updates.name;
+    if (updates.email) updateData.email = updates.email;
+    if (updates.department) updateData.department = updates.department;
+    if (updates.profilePicture !== undefined) updateData.profilePicture = updates.profilePicture;
+    if (updates.baseMonthlySalary !== undefined) {
+      updateData.baseMonthlySalary = updates.baseMonthlySalary;
+      updateData.currency = updates.currency || 'PKR';
+      updateData.salaryEffectiveFrom = new Date();
+    }
+    if (updates.password && updates.password.length >= 6) {
+      updateData.password = await argon2.hash(updates.password);
+      updateData.plaintextPassword = updates.password;
+    }
+
+    const user = await User.findOneAndUpdate(
+      { _id: employeeId, role: 'employee', isActive: true },
+      { $set: updateData },
+      { new: true }
+    );
+    if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
+    return { name: user.name, email: user.email };
+  }
+
+  /** Update profile picture */
+  static async updateProfilePicture(userId: string, profilePicture: string): Promise<void> {
+    const result = await User.updateOne(
+      { _id: userId, isActive: true },
+      { $set: { profilePicture } }
+    );
+    if (result.matchedCount === 0) {
+      throw Object.assign(new Error('User not found'), { statusCode: 404 });
+    }
   }
 }

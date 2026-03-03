@@ -47,15 +47,26 @@
   }
 
   .card {
-    @apply rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-shadow duration-200;
+    @apply rounded-2xl border p-6 transition-all duration-200;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow:
+      0 4px 24px -4px rgba(99, 102, 241, 0.07),
+      0 1px 3px -1px rgba(0, 0, 0, 0.03),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
   }
 
   .card-hover {
-    @apply card hover:shadow-md hover:ring-gray-900/10;
+    @apply card hover:shadow-md;
   }
 
   .input {
-    @apply block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 text-sm placeholder-gray-400 shadow-sm transition-all duration-200 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20;
+    @apply block w-full rounded-xl px-4 py-3 text-sm placeholder-gray-400 transition-all duration-200 focus:outline-none;
+    background-color: #ffffff;
+    border: 1.5px solid #d1d5db;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 
   .label {
@@ -63,7 +74,15 @@
   }
 
   .stat-card {
-    @apply rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-gray-900/5 flex flex-col items-center justify-center gap-1.5 text-center transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+    @apply rounded-2xl border p-5 flex flex-col items-center justify-center gap-1.5 text-center transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow:
+      0 4px 24px -4px rgba(99, 102, 241, 0.07),
+      0 1px 3px -1px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
   }
 
   .badge {
@@ -98,7 +117,8 @@
 
   /* Table styles */
   .table-header {
-    @apply py-3.5 px-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500;
+    @apply py-3.5 px-4 text-left text-[10.5px] font-bold uppercase tracking-[0.1em] text-gray-400;
+    border-bottom: 2px solid rgba(99,102,241,0.15);
   }
 
   .table-cell {
@@ -138,39 +158,51 @@
 
 /* Theme variables and presets */
 :root {
-  --bg: #f8fafc;
-  --card-bg: #ffffff;
+  --bg: #f0f2f7;
+  --bg-gradient: linear-gradient(135deg, #eef1f7 0%, #f2f4f8 30%, #f0f2f7 60%, #eef1f7 100%);
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --card-bg-solid: #ffffff;
   --text: #0f172a;
-  --muted: #6b7280;
-  --border: rgba(15,23,42,0.06);
+  --muted: #64748b;
+  --border: rgba(255, 255, 255, 0.45);
   --input-bg: rgba(243,244,246,0.8);
   --primary-600: #4f46e5;
   --primary-700: #4338ca;
+  --section-line: rgba(99,102,241,0.18);
+  --heading-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #4f46e5 100%);
 }
 
 
 [data-theme="light"] {
-  --bg: #f8fafc;
-  --card-bg: #ffffff;
+  --bg: #f0f2f7;
+  --bg-gradient: linear-gradient(135deg, #eef1f7 0%, #f2f4f8 30%, #f0f2f7 60%, #eef1f7 100%);
+  --card-bg: rgba(255, 255, 255, 0.55);
+  --card-bg-solid: #ffffff;
   --text: #0f172a;
-  --muted: #6b7280;
-  --border: rgba(15,23,42,0.06);
+  --muted: #64748b;
+  --border: rgba(255, 255, 255, 0.45);
   --input-bg: rgba(243,244,246,0.6);
   --primary-600: #4f46e5;
   --primary-700: #4338ca;
-  --glass-bg: rgba(255,255,255,0.8);
+  --glass-bg: rgba(255,255,255,0.5);
+  --section-line: rgba(99,102,241,0.18);
+  --heading-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #4f46e5 100%);
 }
 
 [data-theme="dark"] {
-  --bg: #0a0a0f;
-  --card-bg: #13131a;
+  --bg: #09090f;
+  --bg-gradient: linear-gradient(135deg, #09090f 0%, #0f0e18 50%, #09090f 100%);
+  --card-bg: rgba(17, 17, 28, 0.7);
+  --card-bg-solid: #111118;
   --text: #f1f1f4;
   --muted: #8b8fa3;
   --border: rgba(255,255,255,0.08);
   --input-bg: rgba(255,255,255,0.05);
   --primary-600: #818cf8;
   --primary-700: #6366f1;
-  --glass-bg: rgba(19,19,26,0.85);
+  --glass-bg: rgba(17,17,24,0.75);
+  --section-line: rgba(129,140,248,0.2);
+  --heading-gradient: linear-gradient(135deg, #e2e8f0 0%, #a5b4fc 50%, #818cf8 100%);
   --icon-bg-indigo: rgba(99,102,241,0.15);
   --icon-bg-emerald: rgba(16,185,129,0.15);
   --icon-bg-rose: rgba(244,63,94,0.15);
@@ -181,27 +213,52 @@
 
 /* Apply the theme variables to base elements */
 html, body, #root {
+  background: var(--bg-gradient, var(--bg)) !important;
   background-color: var(--bg) !important;
   color: var(--text) !important;
 }
 
 .card {
-  background-color: var(--card-bg) !important;
-  border-color: var(--border) !important;
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.8) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 .input {
-  background-color: var(--input-bg) !important;
+  background-color: #ffffff !important;
   color: var(--text) !important;
-  border-color: var(--border) !important;
+  border: 1.5px solid #d1d5db !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+[data-theme="dark"] .input {
+  background-color: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+[data-theme="dark"] select.input option,
+[data-theme="dark"] .input option {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .input:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
 }
 
 .label { color: var(--muted) !important; }
 
-.glass { background-color: var(--glass-bg) !important; backdrop-filter: blur(8px); }
+.glass { background: var(--glass-bg) !important; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
 
 /* App root helper so layout containers don't override theme */
-.app-root { background-color: var(--bg) !important; color: var(--text) !important; }
+.app-root {
+  background: transparent !important;
+  color: var(--text) !important;
+}
 
 /* Dark-mode fixes: map common Tailwind gray text/background utilities to theme variables inside app-root */
 .app-root .text-gray-900,
@@ -216,9 +273,53 @@ html, body, #root {
   color: var(--muted) !important;
 }
 
-/* Ensure explicit white backgrounds adapt in dark mode */
+/* Ensure explicit white backgrounds adapt */
 .app-root .bg-white {
-  background-color: var(--card-bg) !important;
+  background: var(--card-bg) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ── Crisp form fields inside glass cards ── */
+.card input,
+.card select,
+.card textarea,
+.card .input {
+  background-color: #ffffff !important;
+  border: 1.5px solid #d1d5db !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.card input:focus,
+.card select:focus,
+.card textarea:focus,
+.card .input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+[data-theme="dark"] .card input,
+[data-theme="dark"] .card select,
+[data-theme="dark"] .card textarea,
+[data-theme="dark"] .card .input {
+  background-color: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+[data-theme="dark"] .card select option {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] select option {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .card input:focus,
+[data-theme="dark"] .card select:focus,
+[data-theme="dark"] .card textarea:focus,
+[data-theme="dark"] .card .input:focus {
+  border-color: #818cf8 !important;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
 }
 
 /* Dark mode: neutralize colored light-mode shadows */
@@ -346,4 +447,175 @@ html, body, #root {
   border-radius: 12px;
   padding: 8px;
   background-color: transparent;
+}
+
+/* Give chart canvases inside glass cards a solid backdrop so colors stay HD */
+.card canvas {
+  isolation: isolate;
+  border-radius: 8px;
+}
+
+/* ── Enhanced page heading gradient ── */
+.page-heading {
+  background: var(--heading-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Section divider with accent line ── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--section-line) 0%, transparent 85%);
+}
+
+/* ── Subtle background texture for main content area ── */
+.app-root > div:last-child > main {
+  background: transparent !important;
+}
+[data-theme="dark"] .app-root > div:last-child > main {
+  background: transparent !important;
+}
+
+/* ── Enhanced stat card glass ── */
+.stat-card-enhanced {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(24px) saturate(1.8) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow:
+    0 4px 30px -4px rgba(99, 102, 241, 0.1),
+    0 1px 3px -1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6) !important;
+}
+.stat-card-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+  transform: translate(30%, -30%);
+  pointer-events: none;
+}
+[data-theme="dark"] .stat-card-enhanced {
+  background: var(--card-bg) !important;
+  border-color: var(--border) !important;
+}
+[data-theme="dark"] .stat-card-enhanced::before {
+  background: radial-gradient(circle, rgba(129,140,248,0.10) 0%, transparent 70%);
+}
+
+/* ── Enriched icon pill backgrounds (HD saturated) ── */
+.stat-card-enhanced .bg-indigo-50 { background: linear-gradient(135deg, #e0e7ff, #c7d2fe) !important; }
+.stat-card-enhanced .bg-emerald-50 { background: linear-gradient(135deg, #d1fae5, #a7f3d0) !important; }
+.stat-card-enhanced .bg-rose-50 { background: linear-gradient(135deg, #ffe4e6, #fecdd3) !important; }
+.stat-card-enhanced .bg-cyan-50 { background: linear-gradient(135deg, #cffafe, #a5f3fc) !important; }
+.stat-card-enhanced .bg-amber-50 { background: linear-gradient(135deg, #fef3c7, #fde68a) !important; }
+
+/* ── Card inner glow on dark ── */
+[data-theme="dark"] .card {
+  background: var(--card-bg) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.04), 0 2px 12px -2px rgba(0,0,0,0.3) !important;
+}
+
+/* ── Table row hover effect ── */
+.app-root table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.app-root table tbody tr:hover {
+  background-color: rgba(99, 102, 241, 0.03);
+}
+[data-theme="dark"] .app-root table tbody tr:hover {
+  background-color: rgba(129, 140, 248, 0.05);
+}
+
+/* ── Crisp borders inside glass cards ── */
+.card table tr {
+  border-color: #e5e7eb !important;
+}
+.card table thead tr {
+  border-bottom: 2px solid #d1d5db !important;
+}
+.card .border-b {
+  border-color: #e5e7eb !important;
+}
+.card .border-gray-50,
+.card .border-gray-50\/80,
+.card .border-gray-100 {
+  border-color: #e5e7eb !important;
+}
+.card .border-gray-200,
+.card .border-gray-200\/60 {
+  border-color: #d1d5db !important;
+}
+[data-theme="dark"] .card table tr {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+[data-theme="dark"] .card table thead tr {
+  border-bottom-color: rgba(255,255,255,0.12) !important;
+}
+[data-theme="dark"] .card .border-b,
+[data-theme="dark"] .card .border-gray-50,
+[data-theme="dark"] .card .border-gray-50\/80,
+[data-theme="dark"] .card .border-gray-100,
+[data-theme="dark"] .card .border-gray-200,
+[data-theme="dark"] .card .border-gray-200\/60 {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* ── Crisp buttons inside glass cards ── */
+.card button.rounded-lg,
+.card a.rounded-lg {
+  border-color: #d1d5db !important;
+}
+[data-theme="dark"] .card button.rounded-lg,
+[data-theme="dark"] .card a.rounded-lg {
+  border-color: rgba(255,255,255,0.12) !important;
+}
+
+/* ── Smooth link/button focus ring ── */
+.app-root a:focus-visible,
+.app-root button:focus-visible {
+  outline: 2px solid var(--primary-600);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Enhanced scrollbar for main ── */
+.app-root main::-webkit-scrollbar {
+  width: 5px;
+}
+.app-root main::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 10px;
+}
+.app-root main::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.3);
+}
+[data-theme="dark"] .app-root main::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.15);
+}
+[data-theme="dark"] .app-root main::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.3);
+}
+
+/* ── Button micro-interaction ── */
+.btn-primary:active,
+.btn-secondary:active,
+.btn-danger:active,
+.btn-success:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ── Input focus glow ── */
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+[data-theme="dark"] .input:focus {
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
 }

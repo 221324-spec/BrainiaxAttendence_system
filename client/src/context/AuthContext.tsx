@@ -15,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
   isAdmin: boolean;
   isEmployee: boolean;
 }
@@ -45,6 +46,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return;
+    try {
+      const userData = await authApi.me();
+      setUser(userData);
+      localStorage.setItem('catts_user', JSON.stringify(userData));
+    } catch {
+      // Silently fail
+    }
+  }, [token]);
+
   // Validate token on mount
   useEffect(() => {
     const validateToken = async () => {
@@ -71,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     login,
     logout,
+    refreshUser,
     isAdmin: user?.role === 'admin',
     isEmployee: user?.role === 'employee',
   };

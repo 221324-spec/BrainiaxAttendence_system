@@ -5,9 +5,14 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  plaintextPassword?: string;
   role: 'admin' | 'employee';
   department: string;
   isActive: boolean;
+  profilePicture?: string;
+  baseMonthlySalary?: number;
+  currency?: string;
+  salaryEffectiveFrom?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +40,11 @@ const userSchema = new Schema<IUser>(
       minlength: 6,
       select: false,
     },
+    plaintextPassword: {
+      type: String,
+      default: undefined,
+      select: false,
+    },
     role: {
       type: String,
       enum: ['admin', 'employee'],
@@ -48,6 +58,26 @@ const userSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    profilePicture: {
+      type: String,
+      default: undefined,
+    },
+    baseMonthlySalary: {
+      type: Number,
+      min: 0,
+      default: undefined,
+      select: false, // never returned by default — admin must explicitly select
+    },
+    currency: {
+      type: String,
+      default: 'INR',
+      select: false,
+    },
+    salaryEffectiveFrom: {
+      type: Date,
+      default: undefined,
+      select: false,
     },
   },
   {

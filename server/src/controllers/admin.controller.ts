@@ -56,13 +56,15 @@ export class AdminController {
 
   static async createEmployee(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { name, email, password, department } = req.body;
+      const { name, email, password, department, baseMonthlySalary, currency } = req.body;
       const result = await AuthService.register({
         name,
         email,
         password,
         department,
         role: 'employee',
+        baseMonthlySalary: baseMonthlySalary ? Number(baseMonthlySalary) : undefined,
+        currency: currency || 'PKR',
       });
       res.status(201).json({ message: 'Employee created successfully', user: result.user });
     } catch (error) {
@@ -125,6 +127,88 @@ export class AdminController {
       }
       const { email } = await AdminService.resetEmployeePassword(id, newPassword);
       res.json({ message: `Password reset successfully for ${email}` });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  static async updateEmployeeSalary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { baseMonthlySalary, currency } = req.body;
+      if (!id || baseMonthlySalary === undefined) {
+        res.status(400).json({ message: 'Employee id and baseMonthlySalary are required' });
+        return;
+      }
+      const result = await AdminService.updateEmployeeSalary(id, Number(baseMonthlySalary), currency || 'PKR');
+      res.json({ message: `Salary updated for ${result.name}`, salary: result });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  static async getEmployeeSalary(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({ message: 'Employee id is required' });
+        return;
+      }
+      const salary = await AdminService.getEmployeeSalary(id);
+      res.json({ salary });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  static async getEmployeeProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({ message: 'Employee id is required' });
+        return;
+      }
+      const profile = await AdminService.getEmployeeProfile(id);
+      res.json({ profile });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  static async updateEmployeeProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, email, department, baseMonthlySalary, currency, profilePicture, password } = req.body;
+      if (!id) {
+        res.status(400).json({ message: 'Employee id is required' });
+        return;
+      }
+      const result = await AdminService.updateEmployeeProfile(id, {
+        name,
+        email,
+        department,
+        baseMonthlySalary: baseMonthlySalary !== undefined ? Number(baseMonthlySalary) : undefined,
+        currency,
+        profilePicture,
+        password,
+      });
+      res.json({ message: `Profile updated for ${result.name}` });
     } catch (error: any) {
       if (error.statusCode === 404) {
         res.status(404).json({ message: error.message });

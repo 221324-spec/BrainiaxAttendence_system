@@ -13,6 +13,10 @@ router.get('/employees/status', AdminController.getEmployeesWithStatus);
 router.post('/employees', AdminController.createEmployee);
 router.delete('/employees/:id', AdminController.deleteEmployee);
 router.patch('/employees/:id/reset-password', AdminController.resetEmployeePassword);
+router.get('/employees/:id/salary', AdminController.getEmployeeSalary);
+router.patch('/employees/:id/salary', AdminController.updateEmployeeSalary);
+router.get('/employees/:id/profile', AdminController.getEmployeeProfile);
+router.patch('/employees/:id/profile', AdminController.updateEmployeeProfile);
 
 // Manual correction (admin)
 router.post('/attendance/correct', AdminController.adminUpsertAttendance);

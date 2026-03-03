@@ -26,10 +26,36 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <AuthProvider>
             <App />
           <Toaster
-            position="top-right"
+            position="top-center"
+            containerStyle={{
+              top: 20,
+              left: '50%',
+              transform: 'translateX(-40%)',
+            }}
             toastOptions={{
               duration: 3000,
-              style: { background: '#1e293b', color: '#fff' },
+              style: {
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                color: '#1e293b',
+                borderRadius: '12px',
+                padding: '12px 20px',
+                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.12)',
+                border: '1px solid rgba(0, 0, 0, 0.06)',
+                fontWeight: 500,
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
             }}
           />
           </AuthProvider>

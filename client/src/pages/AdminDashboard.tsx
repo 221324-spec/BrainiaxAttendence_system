@@ -9,20 +9,22 @@ import {
   BarElement,
 } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
+import PayrollTrendChart from '../components/PayrollTrendChart';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
+import { payrollApi } from '../api/payroll';
 import Layout from '../components/Layout';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
   HiOutlineUsers,
   HiOutlineRefresh,
-  HiOutlineDownload,
-  HiOutlineClock,
   HiOutlineCheckCircle,
   HiOutlineXCircle,
   HiOutlineTrendingUp,
 } from 'react-icons/hi';
+ import UserProfileModal from '../components/UserProfileModal';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -41,13 +43,13 @@ function StatCard({
   iconColor: string;
 }) {
   return (
-    <div className="card flex items-center gap-4 p-5 hover:shadow-md transition-shadow">
-      <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${iconBg}`}>
+    <div className="card stat-card-enhanced flex items-center gap-4 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+      <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${iconBg} shadow-sm`}>
         <Icon className={`h-6 w-6 ${iconColor}`} />
       </div>
       <div>
         <p className="text-[1.65rem] font-extrabold leading-none tracking-tight">{value}</p>
-        <p className="text-xs font-medium text-gray-400 mt-1">{label}</p>
+        <p className="text-[11px] font-semibold text-gray-400 mt-1.5 uppercase tracking-wider">{label}</p>
       </div>
     </div>
   );
@@ -75,8 +77,18 @@ function DeptRow({ name, count, total, idx }: { name: string; count: number; tot
    ═══════════════════════════════════════════════════ */
 export default function AdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [trendMonths, setTrendMonths] = useState(6);
   const { theme } = useTheme();
+  const { user } = useAuth();
   const isDark = theme === 'dark';
+
+  const initials = user?.name
+    ?.split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '??';
 
   /* ── Queries ── */
   const {
@@ -90,7 +102,7 @@ export default function AdminDashboard() {
     refetchInterval: autoRefresh ? 60000 : false,
   });
 
-  const { data: employeesData, isLoading: loadingEmployees } = useQuery({
+  const { data: employeesData } = useQuery({
     queryKey: ['admin', 'employees', 'status'],
     queryFn: () => adminApi.getEmployeesWithStatus(),
     refetchInterval: autoRefresh ? 60000 : false,
@@ -101,43 +113,16 @@ export default function AdminDashboard() {
     queryFn: () => adminApi.getEmployees(),
   });
 
-  /* ── Export state ── */
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const firstOfMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`;
-  const [startDate, setStartDate] = useState(firstOfMonth);
-  const [endDate, setEndDate] = useState(todayStr);
-  const [exporting, setExporting] = useState(false);
+  const { data: payrollOverview } = useQuery({
+    queryKey: ['payroll', 'overview', trendMonths],
+    queryFn: () => payrollApi.getOverview(trendMonths),
+    refetchInterval: autoRefresh ? 120000 : false,
+  });
 
   const handleManualRefresh = useCallback(async () => {
     await refetch();
     toast.success('Dashboard refreshed');
   }, [refetch]);
-
-  const handleExport = async () => {
-    if (!selectedEmployee) { toast.error('Please select an employee'); return; }
-    if (!startDate || !endDate) { toast.error('Please select a date range'); return; }
-    if (startDate > endDate) { toast.error('Start date must be before end date'); return; }
-    setExporting(true);
-    try {
-      const blob = await adminApi.exportCsv(selectedEmployee, startDate, endDate);
-      const emp = allEmployeesData?.employees.find((e) => e._id === selectedEmployee);
-      const safeName = emp?.name.replace(/[^a-zA-Z0-9]/g, '_') || 'employee';
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${safeName}_${startDate}_${endDate}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      toast.success('CSV exported');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Export failed');
-    } finally {
-      setExporting(false);
-    }
-  };
 
   /* ── Derived data ── */
   const present = stats?.presentToday ?? 0;
@@ -158,19 +143,6 @@ export default function AdminDashboard() {
   const deptEntries = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]);
   const deptTotal = deptEntries.reduce((s, [, c]) => s + c, 0);
 
-  // Weekly trend — derived from real present/absent data
-  // Shows today's real value and estimates for other weekdays based on current ratio
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-  const todayIdx = Math.min(new Date().getDay() - 1, 4); // 0=Mon ... 4=Fri
-  const ratio = total > 0 ? present / total : 0.8;
-  const weekPresent = weekDays.map((_, i) => {
-    if (i === todayIdx) return present;
-    // For days we don't have data yet, show as 0 (future) or approximate (past)
-    if (i > todayIdx) return 0;
-    return Math.round(total * ratio); // Past days approximate
-  });
-  const weekAbsent = weekPresent.map((p, i) => i > todayIdx ? 0 : Math.max(0, total - p));
-
   /* ── Chart Configurations ── */
 
   // Chart theme colors
@@ -178,47 +150,7 @@ export default function AdminDashboard() {
   const tickColor = isDark ? '#8b8fa3' : '#9ca3af';
   const labelColor = isDark ? '#d1d5db' : '#374151';
 
-  // 1. Dual bar: Present vs Absent (weekly trend)
-  const trendBarData = {
-    labels: weekDays,
-    datasets: [
-      {
-        label: 'Present',
-        data: weekPresent,
-        backgroundColor: isDark ? 'rgba(129,140,248,0.85)' : 'rgba(99,102,241,0.85)',
-        borderRadius: 6,
-        barThickness: 28,
-      },
-      {
-        label: 'Absent',
-        data: weekAbsent,
-        backgroundColor: isDark ? 'rgba(129,140,248,0.25)' : 'rgba(99,102,241,0.2)',
-        borderRadius: 6,
-        barThickness: 28,
-      },
-    ],
-  };
-  const trendBarOpts: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { usePointStyle: true, pointStyle: 'circle', padding: 20, font: { size: 12 }, color: tickColor },
-      },
-      tooltip: { mode: 'index', intersect: false },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 12 } } },
-      y: {
-        grid: { color: gridColor, drawBorder: false },
-        ticks: { color: tickColor, font: { size: 11 }, stepSize: 5 },
-        beginAtZero: true,
-      },
-    },
-  };
-
-  // 2. Workforce status donut — real-time breakdown (different insight from attendance-rate donut)
+  // 2. Workforce status donut
   const statusBreakdown = { working: 0, onBreak: 0, halfDay: 0, notCheckedIn: 0 };
   employeesData?.employees?.forEach((emp: any) => {
     const att = emp.todayAttendance;
@@ -232,9 +164,11 @@ export default function AdminDashboard() {
     labels: ['Working', 'On Break', 'Half Day', 'Not Checked In'],
     datasets: [{
       data: [statusBreakdown.working, statusBreakdown.onBreak, statusBreakdown.halfDay, statusBreakdown.notCheckedIn],
-      backgroundColor: ['#6366f1', '#f59e0b', '#f97316', isDark ? '#374151' : '#cbd5e1'],
-      hoverOffset: 6,
-      borderWidth: 0,
+      backgroundColor: ['#6366f1', '#f59e0b', '#f97316', isDark ? '#f43f5e' : '#fb7185'],
+      hoverBackgroundColor: ['#4f46e5', '#d97706', '#ea580c', isDark ? '#e11d48' : '#f43f5e'],
+      hoverOffset: 8,
+      borderWidth: 2,
+      borderColor: '#ffffff',
     }],
   };
   const statusOpts: any = {
@@ -247,43 +181,16 @@ export default function AdminDashboard() {
     },
   };
 
-  // 3. Attendance rate donut (with center text)
-  const rateData = {
-    labels: ['Attendance', 'Remaining'],
-    datasets: [{
-      data: [pct, Math.max(0, 100 - pct)],
-      backgroundColor: ['#10b981', isDark ? '#2a2a35' : '#e5e7eb'],
-      borderWidth: 0,
-      hoverOffset: 4,
-    }],
-  };
-  const rateOpts: any = {
-    cutout: '72%',
-    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-  };
-  const centerTextPlugin = {
-    id: 'centerText',
-    afterDraw(chart: any) {
-      const { ctx, width, height } = chart;
-      ctx.save();
-      ctx.font = 'bold 28px Inter, system-ui, sans-serif';
-      ctx.fillStyle = isDark ? '#f1f1f4' : '#111827';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${pct}%`, width / 2, height / 2 - 8);
-      ctx.font = '500 12px Inter, system-ui, sans-serif';
-      ctx.fillStyle = isDark ? '#8b8fa3' : '#9ca3af';
-      ctx.fillText('Attendance', width / 2, height / 2 + 16);
-      ctx.restore();
-    },
-  };
-
   // 4. Department horizontal bar chart
   const deptBarData = {
     labels: deptEntries.map(([name]) => name),
     datasets: [{
       data: deptEntries.map(([, count]) => count),
       backgroundColor: deptEntries.map((_, i) => DEPT_HEX[i % DEPT_HEX.length]),
+      hoverBackgroundColor: deptEntries.map((_, i) => {
+        const darker = ['#4f46e5', '#059669', '#d97706', '#e11d48', '#7c3aed', '#0891b2', '#2563eb', '#0d9488'];
+        return darker[i % darker.length];
+      }),
       borderRadius: 6,
       barThickness: 24,
     }],
@@ -299,6 +206,162 @@ export default function AdminDashboard() {
     },
   };
 
+  /* ── Currency formatter ── */
+  const fmtMoney = (n: number) => {
+    if (n >= 1_000_000) return `PKR ${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `PKR ${(n / 1_000).toFixed(1)}K`;
+    return `PKR ${n.toFixed(0)}`;
+  };
+
+  /* ── Payroll chart data ── */
+  const payTrend = payrollOverview?.monthlyTrend || [];
+
+  // Payout by Department donut
+  const payDepts = payrollOverview?.departmentBreakdown || [];
+  const payDeptDonutData = {
+    labels: payDepts.map((d: any) => d.name),
+    datasets: [{
+      data: payDepts.map((d: any) => d.total),
+      backgroundColor: payDepts.map((_: any, i: number) => DEPT_HEX[i % DEPT_HEX.length]),
+      borderWidth: 2,
+      borderColor: '#ffffff',
+      hoverOffset: 8,
+    }],
+  };
+  const payDeptDonutOpts: any = {
+    cutout: '60%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { usePointStyle: true, pointStyle: 'circle', padding: 14, font: { size: 11 }, color: tickColor },
+      },
+      tooltip: { callbacks: { label: (ctx: any) => `${ctx.label}: ${fmtMoney(ctx.raw ?? 0)}` } },
+    },
+  };
+
+  // ── Payroll Spend vs Budget donut ──
+  const lrb = payrollOverview?.latestRunBudget;
+  const spendBase = lrb?.base ?? 0;
+  const spendPaid = lrb?.paid ?? 0;
+  const spendBonus = lrb?.bonus ?? 0;
+  const spendDock = lrb?.dock ?? 0;
+  const spendLabel = lrb?.label ?? '';
+  const hasRuns = (payrollOverview?.totalRuns ?? 0) > 0;
+  const isOverBudget = spendPaid > spendBase && spendBase > 0;
+  const spendPct = spendBase > 0 ? Math.min(Math.round((spendPaid / spendBase) * 100), 100) : 0;
+
+  // Determine chart state
+  type SpendState = 'no-payroll' | 'budget-not-set' | 'over-budget' | 'normal';
+  const spendState: SpendState = !hasRuns
+    ? 'no-payroll'
+    : spendBase === 0
+      ? 'budget-not-set'
+      : isOverBudget
+        ? 'over-budget'
+        : 'normal';
+
+  const spendChartData = (() => {
+    switch (spendState) {
+      case 'no-payroll':
+        return {
+          labels: ['No Data'],
+          datasets: [{ data: [100], backgroundColor: [isDark ? '#4b5563' : '#d1d5db'], borderWidth: 0, hoverOffset: 0 }],
+        };
+      case 'budget-not-set':
+        return {
+          labels: ['Not Configured'],
+          datasets: [{ data: [100], backgroundColor: [isDark ? '#4b5563' : '#d1d5db'], borderWidth: 0, hoverOffset: 0 }],
+        };
+      case 'over-budget':
+        return {
+          labels: ['Paid'],
+          datasets: [{ data: [100], backgroundColor: ['#6366f1'], hoverBackgroundColor: ['#4f46e5'], borderWidth: 2, borderColor: '#ffffff', hoverOffset: 6 }],
+        };
+      default: // normal
+        return {
+          labels: ['Paid', 'Remaining'],
+          datasets: [{
+            data: [spendPct, Math.max(0, 100 - spendPct)],
+            backgroundColor: ['#6366f1', isDark ? '#f59e0b' : '#fbbf24'],
+            hoverBackgroundColor: ['#4f46e5', isDark ? '#d97706' : '#f59e0b'],
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 6,
+          }],
+        };
+    }
+  })();
+
+  const spendChartOpts: any = {
+    cutout: '72%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: spendState === 'normal' || spendState === 'over-budget',
+        callbacks: {
+          label: () => {
+            const lines = [
+              `Base Total: ${fmtMoney(spendBase)}`,
+              `Bonus Total: ${fmtMoney(spendBonus)}`,
+              `Dock Total: ${fmtMoney(spendDock)}`,
+              `Final Paid: ${fmtMoney(spendPaid)}`,
+            ];
+            return lines;
+          },
+        },
+      },
+    },
+  };
+
+  const spendCenterPlugin = {
+    id: 'spendCenter',
+    afterDraw(chart: any) {
+      const { ctx, width, height } = chart;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      if (spendState === 'no-payroll') {
+        ctx.font = 'bold 12px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
+        ctx.fillText('No Payroll', width / 2, height / 2 - 8);
+        ctx.font = '500 10px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#6b7280' : '#9ca3af';
+        ctx.fillText('Generated', width / 2, height / 2 + 8);
+      } else if (spendState === 'budget-not-set') {
+        ctx.font = 'bold 11px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#9ca3af' : '#6b7280';
+        ctx.fillText('Budget Not', width / 2, height / 2 - 8);
+        ctx.font = '500 11px Inter, system-ui, sans-serif';
+        ctx.fillText('Configured', width / 2, height / 2 + 8);
+      } else if (spendState === 'over-budget') {
+        ctx.font = 'bold 18px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#f1f1f4' : '#111827';
+        ctx.fillText(fmtMoney(spendPaid), width / 2, height / 2 - 14);
+        ctx.font = '500 10px Inter, system-ui, sans-serif';
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText(`Over by ${fmtMoney(spendPaid - spendBase)}`, width / 2, height / 2 + 6);
+        ctx.font = '500 10px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#8b8fa3' : '#9ca3af';
+        ctx.fillText(spendLabel, width / 2, height / 2 + 20);
+      } else {
+        ctx.font = 'bold 18px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#f1f1f4' : '#111827';
+        ctx.fillText(fmtMoney(spendPaid), width / 2, height / 2 - 18);
+        ctx.font = '500 10px Inter, system-ui, sans-serif';
+        ctx.fillStyle = isDark ? '#8b8fa3' : '#9ca3af';
+        ctx.fillText(`of ${fmtMoney(spendBase)}`, width / 2, height / 2);
+        ctx.font = 'bold 13px Inter, system-ui, sans-serif';
+        ctx.fillStyle = '#6366f1';
+        ctx.fillText(`${spendPct}%`, width / 2, height / 2 + 16);
+      }
+
+      ctx.restore();
+    },
+  };
+
+
+
   /* ═══════════════════════════════════════════
      JSX
      ═══════════════════════════════════════════ */
@@ -308,8 +371,8 @@ export default function AdminDashboard() {
       <div className="mb-8 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight">Admin Dashboard</h1>
-            <p className="text-sm text-gray-400 mt-0.5">Overview of today&apos;s attendance across the organization</p>
+            <h1 className="text-2xl font-extrabold tracking-tight page-heading">Admin Dashboard</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Overview of Insight&apos;s across the organization</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mr-1">
@@ -331,6 +394,22 @@ export default function AdminDashboard() {
               />
               <span className="text-xs font-medium text-gray-500">Auto</span>
             </label>
+            {/* Profile Icon */}
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="group relative h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 p-0.5 shadow-lg shadow-indigo-200/50 dark:shadow-indigo-900/30 ring-2 ring-white/50 dark:ring-white/20 hover:ring-indigo-300 hover:scale-105 transition-all ml-1"
+              title="View profile"
+            >
+              <div className="h-full w-full rounded-full overflow-hidden bg-white dark:bg-gray-900 flex items-center justify-center">
+                {user?.profilePicture ? (
+                  <img src={user.profilePicture} alt={user?.name} className="h-full w-full object-cover" />
+                ) : (
+                  <span className="text-sm font-bold bg-gradient-to-br from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    {initials}
+                  </span>
+                )}
+              </div>
+            </button>
           </div>
         </div>
       </div>
@@ -341,7 +420,11 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <>
-          {/* ── Stat Cards ── */}
+          {/* ── Overview Section ── */}
+          <div className="flex items-center gap-3 mb-3 animate-fade-in">
+            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 whitespace-nowrap">Overview</span>
+            <div className="flex-1 h-px section-divider" />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fade-in">
             <StatCard icon={HiOutlineUsers} label="Total Employees" value={total} iconBg="bg-indigo-50" iconColor="text-indigo-600" />
             <StatCard icon={HiOutlineCheckCircle} label="Present Today" value={present} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
@@ -349,16 +432,32 @@ export default function AdminDashboard() {
             <StatCard icon={HiOutlineTrendingUp} label="Attendance Rate" value={`${pct}%`} iconBg="bg-cyan-50" iconColor="text-cyan-600" />
           </div>
 
-          {/* ── Charts Row 1: Trend Bar + Distribution Donut ── */}
+          {/* ── Analytics Section ── */}
+          <div className="flex items-center gap-3 mb-3 animate-fade-in">
+            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 whitespace-nowrap">Analytics</span>
+            <div className="flex-1 h-px section-divider" />
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2 card p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold">Present vs Absent</h3>
-                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">This Week</span>
+                <h3 className="text-base font-bold">Payroll Spend Trend</h3>
+                <div className="flex items-center gap-2">
+                  {[6, 12, 24].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setTrendMonths(m)}
+                      className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                        trendMonths === m
+                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      {m}M
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div style={{ height: 280 }}>
-                <Bar data={trendBarData} options={trendBarOpts} />
-              </div>
+              <PayrollTrendChart data={payTrend} isDark={isDark} />
             </div>
             <div className="card p-6 flex flex-col">
               <h3 className="text-base font-bold mb-4">Workforce Status</h3>
@@ -368,23 +467,57 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* ── Charts Row 2: Rate Donut + Department Breakdown ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Payout by Dept + Revenue + Department Breakdown */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            <div className="card p-6 flex flex-col">
+              <h3 className="text-base font-bold mb-4">Payout by Department</h3>
+              {payDepts.length > 0 ? (
+                <div className="flex-1 flex items-center justify-center" style={{ minHeight: 220 }}>
+                  <Doughnut data={payDeptDonutData} options={payDeptDonutOpts} />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 py-12 text-center">No payroll data</p>
+              )}
+            </div>
+
             <div className="card p-6 flex flex-col items-center justify-center">
-              <h3 className="text-base font-bold mb-4 self-start">Attendance Rate</h3>
-              <div style={{ width: 200, height: 200 }}>
-                <Doughnut data={rateData} options={rateOpts} plugins={[centerTextPlugin]} />
+              <div className="flex items-center justify-between w-full mb-4">
+                <h3 className="text-base font-bold">Payroll Spend vs Budget</h3>
+                {spendState === 'over-budget' && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">
+                    Over Budget
+                  </span>
+                )}
               </div>
-              <div className="mt-4 flex items-center gap-4 text-xs font-medium text-gray-500">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
-                  Present
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-gray-200 inline-block" />
-                  Absent
-                </span>
+              <div style={{ width: 180, height: 180 }}>
+                <Doughnut data={spendChartData} options={spendChartOpts} plugins={[spendCenterPlugin]} />
               </div>
+              {spendState === 'no-payroll' && (
+                <p className="mt-3 text-xs text-gray-400 text-center">Run payroll to populate data</p>
+              )}
+              {spendState === 'normal' && (
+                <div className="mt-4 flex items-center gap-4 text-xs font-medium text-gray-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 inline-block" />
+                    Paid
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400 inline-block" />
+                    Remaining
+                  </span>
+                </div>
+              )}
+              {spendState === 'over-budget' && (
+                <div className="mt-4 flex items-center gap-4 text-xs font-medium text-gray-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 inline-block" />
+                    Paid
+                  </span>
+                </div>
+              )}
+              {spendLabel && spendState !== 'no-payroll' && (
+                <p className="mt-1 text-[10px] text-gray-400 text-center">{spendLabel}</p>
+              )}
             </div>
 
             <div className="lg:col-span-2 card p-6">
@@ -408,191 +541,15 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
+
+
         </>
       )}
 
-      {/* ── CSV Export ── */}
-      <div className="card mb-8 animate-slide-up relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-50 to-transparent blur-2xl" />
-        <div className="relative">
-          <h2 className="mb-5 flex items-center gap-2.5 text-base font-bold">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-              <HiOutlineDownload className="h-5 w-5" />
-            </div>
-            Export Attendance CSV
-          </h2>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row items-end gap-4">
-              <div className="flex-1 w-full">
-                <label className="label">Employee</label>
-                <select
-                  value={selectedEmployee}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-                  className="input"
-                >
-                  <option value="">Select employee...</option>
-                  {allEmployeesData?.employees.map((emp) => (
-                    <option key={emp._id} value={emp._id}>
-                      {emp.name} — {emp.department}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row items-end gap-4">
-              <div className="w-full sm:flex-1">
-                <label className="label">From</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="input"
-                  max={endDate || undefined}
-                />
-              </div>
-              <div className="w-full sm:flex-1">
-                <label className="label">To</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="input"
-                  min={startDate || undefined}
-                />
-              </div>
-              <button
-                onClick={handleExport}
-                disabled={exporting || !selectedEmployee || !startDate || !endDate}
-                className="btn-primary flex items-center gap-2 whitespace-nowrap"
-              >
-                <HiOutlineDownload className="h-4 w-4" />
-                {exporting ? 'Exporting...' : 'Export CSV'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Employees Table ── */}
-      <div className="card animate-slide-up">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="flex items-center gap-2.5 text-base font-bold">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-              <HiOutlineClock className="h-5 w-5" />
-            </div>
-            Today&apos;s Attendance
-          </h2>
-          {employeesData && (
-            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
-              {employeesData.employees.length} employees
-            </span>
-          )}
-        </div>
-        {loadingEmployees ? (
-          <div className="flex justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-indigo-100 border-t-indigo-600" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto -mx-6 px-6">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="table-header">Employee</th>
-                  <th className="table-header">Department</th>
-                  <th className="table-header">Punch In</th>
-                  <th className="table-header">Punch Out</th>
-                  <th className="table-header">Break</th>
-                  <th className="table-header">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employeesData?.employees.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <HiOutlineUsers className="h-10 w-10 text-gray-300" />
-                        <p className="font-medium">No employees found</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  employeesData?.employees.map((emp) => {
-                    const att = emp.todayAttendance;
-                    const status = att?.status || 'not-checked-in';
-                    const initials = emp.name
-                      .split(' ')
-                      .map((n: string) => n[0])
-                      .join('')
-                      .slice(0, 2)
-                      .toUpperCase();
-                    return (
-                      <tr
-                        key={emp._id}
-                        className="border-b border-gray-50 transition-colors hover:bg-gray-50/50"
-                      >
-                        <td className="table-cell">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-xs font-bold text-white shadow-sm">
-                              {initials}
-                            </div>
-                            <div>
-                              <p className="font-semibold">{emp.name}</p>
-                              <p className="text-xs text-gray-400">{emp.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="table-cell">
-                          <span className="badge-neutral">{emp.department}</span>
-                        </td>
-                        <td className="table-cell font-medium">
-                          {att?.punchIn
-                            ? new Date(att.punchIn).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : <span className="text-gray-300">--:--</span>}
-                        </td>
-                        <td className="table-cell font-medium">
-                          {att?.punchOut
-                            ? new Date(att.punchOut).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : <span className="text-gray-300">--:--</span>}
-                        </td>
-                        <td className="table-cell font-medium text-amber-600">
-                          {(att?.totalBreakMinutes ?? 0) > 0
-                            ? `${Math.floor(att!.totalBreakMinutes / 60)}h ${att!.totalBreakMinutes % 60}m`
-                            : att?.isOnBreak
-                            ? <span className="badge-warning animate-pulse">On break</span>
-                            : <span className="text-gray-300">—</span>}
-                        </td>
-                        <td className="table-cell">
-                          <span
-                            className={
-                              status === 'present'
-                                ? 'badge-success'
-                                : status === 'half-day'
-                                ? 'badge-warning'
-                                : status === 'absent'
-                                ? 'badge-danger'
-                                : 'badge-neutral'
-                            }
-                          >
-                            {status === 'not-checked-in'
-                              ? 'Not Checked In'
-                              : status.charAt(0).toUpperCase() + status.slice(1)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <UserProfileModal onClose={() => setShowProfileModal(false)} />
+      )}
     </Layout>
   );
 }

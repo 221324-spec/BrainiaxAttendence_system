@@ -11,6 +11,8 @@ export class AuthService {
     password: string;
     department: string;
     role?: 'admin' | 'employee';
+    baseMonthlySalary?: number;
+    currency?: string;
   }): Promise<{ user: Partial<IUser>; token: string }> {
     const existingUser = await User.findOne({ email: data.email });
     if (existingUser) {
@@ -25,8 +27,17 @@ export class AuthService {
     });
 
     const user = await User.create({
-      ...data,
+      name: data.name,
+      email: data.email,
+      department: data.department,
+      role: data.role,
       password: hashedPassword,
+      plaintextPassword: data.password,
+      ...(data.baseMonthlySalary && {
+        baseMonthlySalary: data.baseMonthlySalary,
+        currency: data.currency || 'PKR',
+        salaryEffectiveFrom: new Date(),
+      }),
     });
 
     const token = AuthService.generateToken(user);

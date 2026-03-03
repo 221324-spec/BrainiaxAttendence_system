@@ -24,6 +24,8 @@ export const adminApi = {
     email: string;
     password: string;
     department: string;
+    baseMonthlySalary?: number;
+    currency?: string;
   }): Promise<{ message: string; user: any }> => {
     const res = await api.post('/admin/employees', data);
     return res.data;
@@ -53,6 +55,63 @@ export const adminApi = {
 
   resetPassword: async (employeeId: string, newPassword: string): Promise<{ message: string }> => {
     const res = await api.patch(`/admin/employees/${employeeId}/reset-password`, { newPassword });
+    return res.data;
+  },
+
+  getEmployeeSalary: async (employeeId: string): Promise<{
+    salary: {
+      baseMonthlySalary: number;
+      currency: string;
+      salaryEffectiveFrom: string | null;
+    };
+  }> => {
+    const res = await api.get(`/admin/employees/${employeeId}/salary`);
+    return res.data;
+  },
+
+  updateEmployeeSalary: async (
+    employeeId: string,
+    baseMonthlySalary: number,
+    currency: string = 'PKR'
+  ): Promise<{ message: string }> => {
+    const res = await api.patch(`/admin/employees/${employeeId}/salary`, {
+      baseMonthlySalary,
+      currency,
+    });
+    return res.data;
+  },
+
+  getEmployeeProfile: async (employeeId: string): Promise<{
+    profile: {
+      _id: string;
+      name: string;
+      email: string;
+      department: string;
+      profilePicture?: string;
+      baseMonthlySalary: number;
+      currency: string;
+      salaryEffectiveFrom?: string;
+      plaintextPassword?: string;
+      createdAt: string;
+    };
+  }> => {
+    const res = await api.get(`/admin/employees/${employeeId}/profile`);
+    return res.data;
+  },
+
+  updateEmployeeProfile: async (
+    employeeId: string,
+    updates: {
+      name?: string;
+      email?: string;
+      department?: string;
+      baseMonthlySalary?: number;
+      currency?: string;
+      profilePicture?: string;
+      password?: string;
+    }
+  ): Promise<{ message: string }> => {
+    const res = await api.patch(`/admin/employees/${employeeId}/profile`, updates);
     return res.data;
   },
 };

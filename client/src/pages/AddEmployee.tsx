@@ -11,6 +11,7 @@ import {
   HiOutlineLockClosed,
   HiOutlineOfficeBuilding,
   HiOutlineArrowLeft,
+  HiOutlineCurrencyDollar,
 } from 'react-icons/hi';
 
 export default function AddEmployee() {
@@ -22,15 +23,24 @@ export default function AddEmployee() {
     email: '',
     password: '',
     department: '',
+    baseMonthlySalary: '',
+    currency: 'PKR',
   });
 
   const mutation = useMutation({
-    mutationFn: (data: typeof form) => adminApi.createEmployee(data),
+    mutationFn: (data: typeof form) => adminApi.createEmployee({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      department: data.department,
+      baseMonthlySalary: data.baseMonthlySalary ? Number(data.baseMonthlySalary) : undefined,
+      currency: data.currency,
+    }),
     onSuccess: (data) => {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ['admin', 'employees'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
-      setForm({ name: '', email: '', password: '', department: '' });
+      setForm({ name: '', email: '', password: '', department: '', baseMonthlySalary: '', currency: 'PKR' });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to create employee');
@@ -152,6 +162,23 @@ export default function AddEmployee() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="label">Monthly Salary (PKR)</label>
+                <div className="relative group">
+                  <HiOutlineCurrencyDollar className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary-500" />
+                  <input
+                    type="number"
+                    name="baseMonthlySalary"
+                    value={form.baseMonthlySalary}
+                    onChange={handleChange}
+                    className="input pl-11"
+                    placeholder="e.g. 50000"
+                    min={0}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Optional — can be set later</p>
               </div>
 
               <div className="md:col-span-2 flex gap-3 pt-3">
