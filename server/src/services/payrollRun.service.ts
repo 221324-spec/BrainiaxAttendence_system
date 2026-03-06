@@ -579,4 +579,51 @@ export class PayrollRunService {
 
     return { run, updatedLines };
   }
+
+  /**
+   * Delete a payroll run and all associated employee lines.
+   * Only allows deletion if no lines are FINAL.
+   */
+  static async deleteRun(
+    runId: string,
+    adminUserId: string,
+    ipAddress: string
+  ): Promise<{ deletedLines: number }> {
+    const run = await PayrollRun.findById(runId);
+    if (!run) {
+      throw new AppError('Payroll run not found', 404);
+    }
+
+    // Check if any lines are finalized
+    const finalizedCount = await PayrollEmployeeLine.countDocuments({
+      payrollRunId: run._id,
+      status: 'FINAL',
+    });
+
+    if (finalizedCount > 0) {
+      throw new AppError(
+        `Cannot delete payroll run with ${finalizedCount} finalized line(s). Revert them first.`,
+        400
+      );
+    }
+
+    // Delete all associated lines
+    const deleteResult = await PayrollEmployeeLine.deleteMany({
+      payrollRunId: run._id,
+    });
+
+    // Delete the run
+    await PayrollRun.findByIdAndDelete(runId);
+
+    // Audit log
+    await AuditLog.create({
+      action: 'PAYROLL_RUN_DELETED',
+      performedBy: new Types.ObjectId(adminUserId),
+      targetUserId: null,
+      details: `Deleted payroll run for ${run.month}/${run.year}. ${deleteResult.deletedCount} lines removed.`,
+      ipAddress,
+    });
+
+    return { deletedLines: deleteResult.deletedCount };
+  }
 }

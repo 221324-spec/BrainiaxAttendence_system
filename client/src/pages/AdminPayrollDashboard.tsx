@@ -14,6 +14,7 @@ import {
   HiOutlineTrendingUp,
   HiOutlineTrendingDown,
   HiOutlineUsers,
+  HiOutlineTrash,
 } from 'react-icons/hi';
 
 const MONTH_NAMES = [
@@ -45,11 +46,31 @@ export default function AdminPayrollDashboard() {
     onSuccess: (res) => {
       toast.success(res.message || 'Payroll generated');
       queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'overview'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Generation failed');
     },
   });
+
+  /* ── Delete ── */
+  const deleteMut = useMutation({
+    mutationFn: (runId: string) => payrollApi.deleteRun(runId),
+    onSuccess: (res) => {
+      toast.success(res.message || 'Payroll deleted');
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'runs'] });
+      queryClient.invalidateQueries({ queryKey: ['payroll', 'overview'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Delete failed');
+    },
+  });
+
+  const handleDelete = (runId: string, month: number, year: number) => {
+    if (window.confirm(`Are you sure you want to delete the payroll run for ${MONTH_NAMES[month]} ${year}? This action cannot be undone.`)) {
+      deleteMut.mutate(runId);
+    }
+  };
 
   const runs = data?.runs || [];
 
@@ -240,6 +261,7 @@ export default function AdminPayrollDashboard() {
                   <th className="table-header">Last Recalculated</th>
                   <th className="table-header">Action</th>
                   <th className="table-header">Export</th>
+                  <th className="table-header">Delete</th>
                 </tr>
               </thead>
               <tbody>
@@ -296,6 +318,16 @@ export default function AdminPayrollDashboard() {
                         >
                           <HiOutlineDownload className="h-3.5 w-3.5" />
                           CSV
+                        </button>
+                      </td>
+                      <td className="table-cell">
+                        <button
+                          onClick={() => handleDelete(run._id, run.month, run.year)}
+                          disabled={deleteMut.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-semibold text-red-700 shadow-sm hover:bg-red-100 transition-colors disabled:opacity-50"
+                        >
+                          <HiOutlineTrash className="h-3.5 w-3.5" />
+                          Delete
                         </button>
                       </td>
                     </tr>

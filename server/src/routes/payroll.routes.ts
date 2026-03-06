@@ -35,6 +35,7 @@ router.get('/runs', PayrollController.listRuns);
 router.post('/generate', validate(generatePayrollSchema), PayrollController.generateRun);
 router.post('/:runId/recalculate', PayrollController.recalculate);
 router.patch('/:runId/working-days', validate(updateWorkingDaysSchema), PayrollController.updateWorkingDays);
+router.delete('/:runId', PayrollController.deleteRun);
 router.get('/:runId', PayrollController.getRun);
 router.get('/:runId/lines', PayrollController.getRunLines);
 

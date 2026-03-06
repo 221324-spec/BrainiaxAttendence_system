@@ -258,4 +258,23 @@ export class PayrollController {
       next(error);
     }
   }
+
+  /* ─────────── Delete Payroll Run ─────────── */
+
+  static async deleteRun(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { runId } = req.params;
+      const result = await PayrollRunService.deleteRun(
+        runId,
+        req.user!.userId,
+        getIp(req)
+      );
+      res.json({
+        message: 'Payroll run deleted successfully',
+        deletedLines: result.deletedLines,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

@@ -104,4 +104,10 @@ export const payrollApi = {
     });
     return res.data;
   },
+
+  /* ─────────── Delete Run ─────────── */
+  deleteRun: async (runId: string): Promise<{ message: string; deletedLines: number }> => {
+    const res = await api.delete(`/admin/payroll/${runId}`);
+    return res.data;
+  },
 };
