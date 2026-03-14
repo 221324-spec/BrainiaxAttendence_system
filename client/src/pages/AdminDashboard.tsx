@@ -9,7 +9,7 @@ import {
   BarElement,
 } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
-import PayrollTrendChart from '../components/PayrollTrendChart';
+import PayrollTrendChart, { type PayrollTrendRange } from '../components/PayrollTrendChart';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi } from '../api';
 import { payrollApi } from '../api/payroll';
@@ -78,10 +78,11 @@ function DeptRow({ name, count, total, idx }: { name: string; count: number; tot
 export default function AdminDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [trendMonths, setTrendMonths] = useState(6);
+  const [trendRange, setTrendRange] = useState<PayrollTrendRange>('6m');
   const { theme } = useTheme();
   const { user } = useAuth();
   const isDark = theme === 'dark';
+  const trendMonths = trendRange === 'yearly' ? 24 : Number.parseInt(trendRange, 10);
 
   const initials = user?.name
     ?.split(' ')
@@ -116,7 +117,9 @@ export default function AdminDashboard() {
   const { data: payrollOverview } = useQuery({
     queryKey: ['payroll', 'overview', trendMonths],
     queryFn: () => payrollApi.getOverview(trendMonths),
-    refetchInterval: autoRefresh ? 120000 : false,
+    refetchInterval: autoRefresh ? 15000 : false,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 
   const handleManualRefresh = useCallback(async () => {
@@ -439,25 +442,11 @@ export default function AdminDashboard() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2 card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold">Payroll Spend Trend</h3>
-                <div className="flex items-center gap-2">
-                  {[6, 12, 24].map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setTrendMonths(m)}
-                      className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-all ${
-                        trendMonths === m
-                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
-                          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      {m}M
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <PayrollTrendChart data={payTrend} isDark={isDark} />
+              <PayrollTrendChart
+                data={payTrend}
+                selectedRange={trendRange}
+                onSelectedRangeChange={setTrendRange}
+              />
             </div>
             <div className="card p-6 flex flex-col">
               <h3 className="text-base font-bold mb-4">Workforce Status</h3>

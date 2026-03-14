@@ -433,7 +433,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 relative">
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden relative z-[1]">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 pb-24 sm:pb-8 animate-fade-in">
+          <div className="w-full px-4 py-8 sm:px-6 lg:px-8 pb-24 sm:pb-8 animate-fade-in">
             {children}
           </div>
         </main>

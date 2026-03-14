@@ -1,575 +1,352 @@
-import { useMemo, useCallback } from 'react';
+import { useId, useMemo } from 'react';
 import {
   ResponsiveContainer,
-  ComposedChart,
-  Area,
-  Line,
+  BarChart,
+  Bar,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ReferenceDot,
 } from 'recharts';
 import type { PayrollMonthlyTrend } from '../types';
 
-/* ═══════════════════════════════════════════════════
-   PAYROLL TREND CHART — modern gradient area style
-   ═══════════════════════════════════════════════════ */
+export type PayrollTrendRange = '6m' | '12m' | '24m' | 'yearly';
 
 interface Props {
   data: PayrollMonthlyTrend[];
-  isDark: boolean;
+  selectedRange: PayrollTrendRange;
+  onSelectedRangeChange: (range: PayrollTrendRange) => void;
 }
 
-/* ── PKR formatter ── */
-function fmtPKR(n: number): string {
-  if (n >= 1_000_000) return `PKR ${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `PKR ${(n / 1_000).toFixed(1)}K`;
-  return `PKR ${Math.round(n)}`;
-}
-
-/* ── Compact PKR for labels ── */
-function fmtPKRShort(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return `${Math.round(n)}`;
-}
-
-/* ── Chart data point ── */
 interface ChartPoint {
-  monthLabel: string;
-  monthKey: string;
+  label: string;
+  displayLabel: string;
+  tooltipLabel: string;
   netPayout: number;
   baseSalary: number;
   bonus: number;
   docks: number;
   headcount: number;
-  monthlyChange: number | null;
-  netPayoutMA: number | null;
 }
 
-/* ── Build chart data from backend trend ── */
-function buildChartData(trend: PayrollMonthlyTrend[]): ChartPoint[] {
-  return trend.map((t, i) => {
-    let monthlyChange: number | null = null;
-    if (i > 0) {
-      const prev = trend[i - 1].totalPayout;
-      if (prev > 0) {
-        monthlyChange = Math.round(((t.totalPayout - prev) / prev) * 1000) / 10;
-      }
+const RANGE_OPTIONS: Array<{ value: PayrollTrendRange; label: string }> = [
+  { value: '6m', label: '6 Months' },
+  { value: '12m', label: '12 Months' },
+  { value: '24m', label: '24 Months' },
+  { value: 'yearly', label: 'Yearly' },
+];
+
+function formatCompactAmount(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1)}K`;
+  return `${Math.round(value)}`;
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'PKR',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function buildMonthlyData(trend: PayrollMonthlyTrend[], range: Exclude<PayrollTrendRange, 'yearly'>): ChartPoint[] {
+  const months = Number.parseInt(range, 10);
+  const recentTrend = trend.slice(-months);
+
+  return recentTrend.map((item) => ({
+    label: item.label,
+    displayLabel: item.label.slice(0, 3),
+    tooltipLabel: `${item.label} ${item.year}`,
+    netPayout: item.totalPayout,
+    baseSalary: item.totalBase,
+    bonus: item.totalBonus,
+    docks: item.totalDock,
+    headcount: item.headcount,
+  }));
+}
+
+function buildYearlyData(trend: PayrollMonthlyTrend[]): ChartPoint[] {
+  const yearlyTotals = new Map<number, Omit<ChartPoint, 'label' | 'displayLabel' | 'tooltipLabel'>>();
+
+  trend.forEach((item) => {
+    const current = yearlyTotals.get(item.year);
+    if (current) {
+      current.netPayout += item.totalPayout;
+      current.baseSalary += item.totalBase;
+      current.bonus += item.totalBonus;
+      current.docks += item.totalDock;
+      current.headcount = Math.max(current.headcount, item.headcount);
+      return;
     }
 
-    let netPayoutMA: number | null = null;
-    if (i >= 2) {
-      const sum = trend[i].totalPayout + trend[i - 1].totalPayout + trend[i - 2].totalPayout;
-      netPayoutMA = Math.round((sum / 3) * 100) / 100;
-    }
-
-    return {
-      monthLabel: t.label,
-      monthKey: `${t.year}-${String(t.month).padStart(2, '0')}`,
-      netPayout: t.totalPayout,
-      baseSalary: t.totalBase,
-      bonus: t.totalBonus,
-      docks: t.totalDock,
-      headcount: t.headcount,
-      monthlyChange,
-      netPayoutMA,
-    };
+    yearlyTotals.set(item.year, {
+      netPayout: item.totalPayout,
+      baseSalary: item.totalBase,
+      bonus: item.totalBonus,
+      docks: item.totalDock,
+      headcount: item.headcount,
+    });
   });
+
+  return Array.from(yearlyTotals.entries())
+    .sort(([left], [right]) => left - right)
+    .map(([year, totals]) => ({
+      label: String(year),
+      displayLabel: String(year),
+      tooltipLabel: `Year ${year}`,
+      ...totals,
+    }));
 }
 
-/* ── Compute tight Y domain ── */
-function computeYDomain(points: ChartPoint[]): [number, number] {
-  if (points.length === 0) return [0, 100];
-  const allValues = points.flatMap((p) => [p.netPayout, p.baseSalary].filter((v) => v > 0));
-  if (allValues.length === 0) return [0, 100];
-  const min = Math.min(...allValues);
-  const max = Math.max(...allValues);
-  const range = max - min;
-  const padding = Math.max(range * 0.25, 5000);
-  const lo = Math.max(0, min - padding);          // clamp at 0
-  const hi = max + padding;
-  // Round to nicer tick boundaries
-  const step = Math.pow(10, Math.floor(Math.log10(hi - lo)) - 1) * 5;
-  return [Math.floor(lo / step) * step, Math.ceil(hi / step) * step];
+function getChartData(trend: PayrollMonthlyTrend[], range: PayrollTrendRange): ChartPoint[] {
+  if (trend.length === 0) return [];
+  if (range === 'yearly') return buildYearlyData(trend);
+  return buildMonthlyData(trend, range);
 }
 
-/* ── Compute % axis domain ── */
-function computeChangeDomain(points: ChartPoint[]): [number, number] {
-  const vals = points.map((p) => p.monthlyChange).filter((v): v is number => v !== null);
-  if (vals.length === 0) return [-10, 10];
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
-  const pad = Math.max(Math.abs(max - min) * 0.3, 3);
-  return [Math.floor(min - pad), Math.ceil(max + pad)];
+function getAxisConfig(points: ChartPoint[]) {
+  const maxValue = Math.max(...points.map((point) => point.netPayout), 1);
+  const roughStep = maxValue / 5;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const normalizedStep = roughStep / magnitude;
+
+  let step = magnitude;
+  if (normalizedStep > 5) step = 10 * magnitude;
+  else if (normalizedStep > 2) step = 5 * magnitude;
+  else if (normalizedStep > 1) step = 2 * magnitude;
+
+  const max = Math.ceil(maxValue / step) * step;
+  const ticks = Array.from({ length: Math.floor(max / step) + 1 }, (_, index) => index * step);
+
+  return { max, ticks };
 }
 
-/* ── Find min/max indices for netPayout with overlap prevention ── */
-function findExtremes(points: ChartPoint[]): { minIdx: number; maxIdx: number } | null {
-  if (points.length < 3) return null; // Need at least 3 points for meaningful extremes
-  let minIdx = 0, maxIdx = 0;
-  for (let i = 1; i < points.length; i++) {
-    if (points[i].netPayout < points[minIdx].netPayout) minIdx = i;
-    if (points[i].netPayout > points[maxIdx].netPayout) maxIdx = i;
-  }
-  // Skip if they're the same or too close together (prevents overlap)
-  if (minIdx === maxIdx) return null;
-  
-  // Calculate if labels would visually overlap (within 1 index = adjacent months)
-  const indexDiff = Math.abs(maxIdx - minIdx);
-  const valueDiff = Math.abs(points[maxIdx].netPayout - points[minIdx].netPayout);
-  const avgValue = (points[maxIdx].netPayout + points[minIdx].netPayout) / 2;
-  const percentDiff = (valueDiff / avgValue) * 100;
-  
-  // Only show extremes if they're sufficiently separated (at least 2 months apart AND 5% value diff)
-  if (indexDiff < 2 || percentDiff < 5) return null;
-  
-  return { minIdx, maxIdx };
-}
-
-/* ── Custom cursor - clean vertical line ── */
-function CustomCursor({ points, isDark }: any) {
-  if (!points || points.length === 0) return null;
-  const { x } = points[0];
-  return (
-    <line
-      x1={x}
-      y1={0}
-      x2={x}
-      y2={300}
-      stroke={isDark ? '#6366f1' : '#818cf8'}
-      strokeWidth={1}
-      strokeOpacity={0.4}
-      strokeDasharray="4 4"
-    />
-  );
-}
-
-/* ── Custom active dot with refined glow ── */
-function GlowDot(props: any) {
-  const { cx, cy, stroke } = props;
-  if (cx == null || cy == null) return null;
-  return (
-    <g>
-      {/* Subtle outer glow */}
-      <circle cx={cx} cy={cy} r={10} fill={stroke} opacity={0.12} />
-      <circle cx={cx} cy={cy} r={6} fill={stroke} opacity={0.18} />
-      {/* Inner dot with white border */}
-      <circle cx={cx} cy={cy} r={4} fill={stroke} stroke="#fff" strokeWidth={2} />
-    </g>
-  );
-}
-
-/* ── Extreme-point label (High / Low) - minimal professional style ── */
-function ExtremeLabel({ viewBox, label, value, color, isDark, above }: any) {
-  const { x, y } = viewBox || {};
-  if (x == null || y == null) return null;
-  const yOff = above ? -28 : 28;
-  const bgColor = isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.98)';
-  const labelWidth = 58;
-  
-  return (
-    <g className="extreme-label" style={{ pointerEvents: 'none' }}>
-      {/* Subtle dot marker */}
-      <circle cx={x} cy={y} r={6} fill={color} opacity={0.2} />
-      <circle cx={x} cy={y} r={3.5} fill={color} stroke="#fff" strokeWidth={1.5} />
-      
-      {/* Clean label badge */}
-      <rect
-        x={x - labelWidth / 2}
-        y={y + yOff - 9}
-        width={labelWidth}
-        height={18}
-        rx={9}
-        fill={bgColor}
-        stroke={color}
-        strokeWidth={1}
-        strokeOpacity={0.4}
-      />
-      <text
-        x={x}
-        y={y + yOff + 4}
-        textAnchor="middle"
-        fill={color}
-        fontSize={9}
-        fontWeight={600}
-        fontFamily="Inter, system-ui, sans-serif"
-        style={{ pointerEvents: 'none' }}
-      >
-        {label} {fmtPKRShort(value)}
-      </text>
-    </g>
-  );
-}
-
-/* ── Custom tooltip ── */
-function TrendTooltip({ active, payload, isDark }: any) {
+function PayrollTrendTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
-  const d: ChartPoint = payload[0]?.payload;
-  if (!d) return null;
 
-  const changeColor =
-    d.monthlyChange === null
-      ? isDark ? '#94a3b8' : '#9ca3af'
-      : d.monthlyChange > 0
-        ? '#10b981'
-        : d.monthlyChange < 0
-          ? '#ef4444'
-          : isDark ? '#94a3b8' : '#9ca3af';
+  const point = payload[0]?.payload as ChartPoint | undefined;
+  if (!point) return null;
 
-  const changeIcon =
-    d.monthlyChange === null
-      ? '--'
-      : d.monthlyChange > 0
-        ? `↑ +${d.monthlyChange}%`
-        : d.monthlyChange < 0
-          ? `↓ ${d.monthlyChange}%`
-          : '→ 0%';
+  const rows = [
+    { label: 'Base Salary', value: point.baseSalary, color: '#2563eb' },
+    { label: 'Bonuses', value: point.bonus, color: '#f59e0b' },
+    { label: 'Deductions', value: point.docks, color: '#ef4444' },
+  ];
 
   return (
     <div
       className="pointer-events-none select-none"
       style={{
-        background: isDark ? 'rgba(15,23,42,0.94)' : 'rgba(15,23,42,0.90)',
-        borderRadius: 12,
-        padding: '12px 16px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.28), 0 0 0 1px rgba(99,102,241,0.12)',
-        minWidth: 190,
-        backdropFilter: 'blur(8px)',
+        minWidth: 210,
+        borderRadius: 14,
+        background: '#ffffff',
+        border: '1px solid rgba(148, 163, 184, 0.18)',
+        boxShadow: '0 18px 38px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.08)',
+        padding: '14px 16px',
       }}
     >
-      <p style={{ color: '#f1f5f9', fontWeight: 600, fontSize: 13, marginBottom: 8, letterSpacing: '0.01em' }}>
-        {d.monthLabel}
-      </p>
-
-      {/* Net Payout */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', flexShrink: 0 }} />
-        <span style={{ color: '#cbd5e1', fontSize: 11.5, flex: 1 }}>Net Payout</span>
-        <span style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-          {fmtPKR(d.netPayout)}
-        </span>
+      <div style={{ color: '#475569', fontSize: 12, fontWeight: 700, marginBottom: 10 }}>
+        {point.tooltipLabel}
       </div>
 
-      {/* Base Salary */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#a855f7', flexShrink: 0 }} />
-        <span style={{ color: '#cbd5e1', fontSize: 11.5, flex: 1 }}>Base Salary</span>
-        <span style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-          {fmtPKR(d.baseSalary)}
-        </span>
-      </div>
-
-      <div style={{ height: 1, background: 'rgba(148,163,184,0.12)', margin: '7px 0' }} />
-
-      {/* Bonus */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ color: '#94a3b8', fontSize: 11 }}>Bonus</span>
-        <span style={{ color: '#cbd5e1', fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-          {fmtPKR(d.bonus)}
-        </span>
-      </div>
-
-      {/* Docks */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ color: '#94a3b8', fontSize: 11 }}>Docks</span>
-        <span style={{ color: '#cbd5e1', fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-          {fmtPKR(d.docks)}
-        </span>
-      </div>
-
-      {/* Headcount */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-        <span style={{ color: '#94a3b8', fontSize: 11 }}>Headcount</span>
-        <span style={{ color: '#cbd5e1', fontSize: 11, fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-          {d.headcount}
-        </span>
-      </div>
-
-      {/* Monthly Change */}
-      <div style={{ height: 1, background: 'rgba(148,163,184,0.12)', margin: '7px 0' }} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#94a3b8', fontSize: 11 }}>Monthly Change</span>
-        <span style={{ color: changeColor, fontSize: 11.5, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-          {changeIcon}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Custom legend - clean minimal style ── */
-function TrendLegend({ isDark }: { isDark: boolean }) {
-  const items = [
-    { label: 'Net Payout', color: '#6366f1', type: 'solid' as const },
-    { label: 'Base Salary', color: '#a855f7', type: 'solid' as const },
-    { label: '3M Average', color: isDark ? '#94a3b8' : '#9ca3af', type: 'dashed' as const },
-    { label: 'Change %', color: '#10b981', type: 'dotted' as const },
-  ];
-  return (
-    <div className="flex items-center justify-center gap-5 mt-3 select-none flex-wrap">
-      {items.map((it) => (
-        <div key={it.label} className="flex items-center gap-1.5">
-          {it.type === 'dashed' ? (
-            <svg width="18" height="8" viewBox="0 0 18 8">
-              <line x1="0" y1="4" x2="18" y2="4" stroke={it.color} strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" />
-            </svg>
-          ) : it.type === 'dotted' ? (
-            <svg width="18" height="8" viewBox="0 0 18 8">
-              <line x1="0" y1="4" x2="18" y2="4" stroke={it.color} strokeWidth="1.5" strokeLinecap="round" />
-              <circle cx="9" cy="4" r="2.5" fill={it.color} stroke="#fff" strokeWidth="0.5" />
-            </svg>
-          ) : (
-            <svg width="18" height="8" viewBox="0 0 18 8">
-              <line x1="0" y1="4" x2="18" y2="4" stroke={it.color} strokeWidth="2.5" strokeLinecap="round" />
-            </svg>
-          )}
-          <span
-            className="text-[11px] font-medium"
-            style={{ color: isDark ? '#94a3b8' : '#6b7280' }}
-          >
-            {it.label}
-          </span>
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '10px 1fr auto',
+            gap: 8,
+            alignItems: 'center',
+            fontSize: 12,
+            marginBottom: 7,
+          }}
+        >
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: row.color }} />
+          <span style={{ color: '#64748b', fontWeight: 600 }}>{row.label}</span>
+          <span style={{ color: row.color, fontWeight: 700 }}>{formatCurrency(row.value)}</span>
         </div>
       ))}
+
+      <div
+        style={{
+          marginTop: 10,
+          paddingTop: 10,
+          borderTop: '1px solid rgba(226, 232, 240, 0.9)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <span style={{ color: '#94a3b8', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Total Payroll
+        </span>
+        <span style={{ color: '#0f172a', fontSize: 14, fontWeight: 800 }}>{formatCurrency(point.netPayout)}</span>
+      </div>
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════════════ */
-export default function PayrollTrendChart({ data, isDark }: Props) {
-  const chartData = useMemo(() => buildChartData(data), [data]);
+function GlossyBar({ x, y, width, height, index, chartId }: any) {
+  if (height <= 0 || x == null || y == null || width == null) return null;
 
-  /* ── Derived computations (memoized) ── */
-  const yDomain = useMemo(() => computeYDomain(chartData), [chartData]);
-  const changeDomain = useMemo(() => computeChangeDomain(chartData), [chartData]);
-  const extremes = useMemo(() => findExtremes(chartData), [chartData]);
+  const radius = Math.min(10, width / 2);
+  const clipId = `${chartId}-clip-${index}`;
+  const splitHeight = Math.max(16, height * 0.32);
+  const lowerHeight = Math.max(0, height - splitHeight);
+  const splitY = y + splitHeight;
 
-  const tickColor = isDark ? '#64748b' : '#9ca3af';
-  const gradIdNet = 'payGradNet';
+  return (
+    <g>
+      <defs>
+        <clipPath id={clipId}>
+          <rect x={x} y={y} width={width} height={height} rx={radius} ry={radius} />
+        </clipPath>
+      </defs>
 
-  /* ── Stable formatter refs ── */
-  const fmtYTick = useCallback((v: number) => fmtPKR(v), []);
-  const fmtChangeTick = useCallback((v: number) => `${v}%`, []);
+      <rect x={x + 3} y={y + 5} width={width} height={height} rx={radius} fill="rgba(37, 99, 235, 0.10)" />
 
-  /* ── Change-line dot - minimal styling ── */
-  const changeDot = useCallback((props: any) => {
-    const { cx, cy, payload } = props;
-    if (cx == null || cy == null || payload?.monthlyChange == null) return null;
-    const val = payload.monthlyChange;
-    const color = val > 0 ? '#10b981' : val < 0 ? '#ef4444' : (isDark ? '#64748b' : '#9ca3af');
-    return (
-      <circle cx={cx} cy={cy} r={3} fill={color} stroke="#fff" strokeWidth={1} />
-    );
-  }, [isDark]);
+      <g clipPath={`url(#${clipId})`}>
+        <rect x={x} y={y} width={width} height={splitHeight} fill="#7dc8ff" />
+        <rect x={x} y={splitY} width={width} height={lowerHeight} fill="#1d4ed8" />
+        <rect x={x} y={y} width={width} height={height} fill={`url(#${chartId}-overlay)`} />
+        <rect x={x} y={y} width={width} height={height} fill={`url(#${chartId}-texture)`} opacity={0.36} />
+        <rect x={x + 4} y={y + 4} width={Math.max(0, width - 8)} height={4} rx={2} fill="rgba(255,255,255,0.28)" />
+        <rect x={x + 2} y={Math.max(y + 8, splitY - 2)} width={Math.max(0, width - 4)} height={3} rx={1.5} fill="rgba(255,255,255,0.58)" />
+      </g>
+    </g>
+  );
+}
 
-  /* ── Empty state ── */
+export default function PayrollTrendChart({ data, selectedRange, onSelectedRangeChange }: Props) {
+  const chartId = useId().replace(/:/g, '');
+
+  const chartData = useMemo(() => getChartData(data, selectedRange), [data, selectedRange]);
+  const axisConfig = useMemo(() => getAxisConfig(chartData), [chartData]);
+  const latestPoint = chartData[chartData.length - 1] ?? null;
+
   if (chartData.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 py-12">
-        <svg className="h-10 w-10 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-        <p className="text-sm font-medium text-gray-400 dark:text-gray-500">No payroll runs yet</p>
-        <p className="text-xs text-gray-300 dark:text-gray-600">Generate a payroll run to see trends</p>
+      <div className="flex min-h-[360px] flex-col items-center justify-center px-6 py-10 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: 'linear-gradient(180deg, #dbeafe 0%, #bfdbfe 100%)' }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19h16" />
+            <path d="M7 15V9" />
+            <path d="M12 15V5" />
+            <path d="M17 15v-3" />
+          </svg>
+        </div>
+        <p className="text-sm font-semibold text-slate-500">No payroll data available</p>
+        <p className="mt-1 text-xs text-slate-400">Run payroll for a few periods to unlock the trend chart.</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full" style={{ height: 300 }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={chartData}
-          margin={{ top: 20, right: 45, left: 8, bottom: 8 }}
-        >
-          {/* ── SVG gradient definitions ── */}
-          <defs>
-            {/* Net Payout gradient - clean fade */}
-            <linearGradient id={gradIdNet} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6366f1" stopOpacity={isDark ? 0.35 : 0.25} />
-              <stop offset="50%" stopColor="#818cf8" stopOpacity={isDark ? 0.15 : 0.12} />
-              <stop offset="100%" stopColor="#a5b4fc" stopOpacity={0.0} />
-            </linearGradient>
-          </defs>
-
-          {/* ── Grid - subtle horizontal lines ── */}
-          <CartesianGrid
-            strokeDasharray="3 6"
-            vertical={false}
-            strokeOpacity={isDark ? 0.06 : 0.12}
-            stroke={isDark ? '#475569' : '#e2e8f0'}
-          />
-
-          {/* ── X Axis - clean styling ── */}
-          <XAxis
-            dataKey="monthLabel"
-            axisLine={false}
-            tickLine={false}
-            tick={{ 
-              fill: tickColor, 
-              fontSize: 10, 
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontWeight: 500,
+    <div className="w-full">
+      <div className="mb-5 flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl"
+            style={{
+              background: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95)',
             }}
-            dy={6}
-            tickMargin={2}
-          />
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19h16" />
+              <path d="M7 15V9" />
+              <path d="M12 15V5" />
+              <path d="M17 15v-3" />
+            </svg>
+          </div>
 
-          {/* ── Left Y Axis (PKR) ── */}
-          <YAxis
-            yAxisId="left"
-            axisLine={false}
-            tickLine={false}
-            tick={{ 
-              fill: tickColor, 
-              fontSize: 10, 
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontWeight: 500,
-            }}
-            tickFormatter={fmtYTick}
-            domain={yDomain}
-            allowDataOverflow={false}
-            width={68}
-            dx={-4}
-            tickCount={5}
-          />
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-bold text-slate-800">Payroll Overview</div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Live
+              </span>
+            </div>
+            <div className="text-xs font-medium text-slate-400">
+              {latestPoint ? `Latest payout ${formatCompactAmount(latestPoint.netPayout)}` : 'Trend timeline'}
+            </div>
+          </div>
+        </div>
 
-          {/* ── Right Y Axis (Change %) ── */}
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            axisLine={false}
-            tickLine={false}
-            tick={{ 
-              fill: isDark ? '#475569' : '#94a3b8', 
-              fontSize: 9, 
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontWeight: 400,
-            }}
-            tickFormatter={fmtChangeTick}
-            domain={changeDomain}
-            allowDataOverflow={false}
-            width={36}
-            tickCount={5}
-          />
+        <div className="relative">
+          <select
+            value={selectedRange}
+            onChange={(event) => onSelectedRangeChange(event.target.value as PayrollTrendRange)}
+            className="appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2 pr-9 text-xs font-semibold text-slate-600 shadow-sm outline-none transition-all"
+            style={{ boxShadow: '0 8px 18px rgba(148, 163, 184, 0.12)' }}
+          >
+            {RANGE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <svg
+            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          >
+            <path d="M5 7.5 10 12.5 15 7.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
 
-          {/* ── Tooltip with clean vertical line cursor ── */}
-          <Tooltip
-            content={<TrendTooltip isDark={isDark} />}
-            cursor={<CustomCursor isDark={isDark} />}
-            isAnimationActive={false}
-          />
+      <div className="h-[330px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 14, right: 8, left: 0, bottom: 4 }} barCategoryGap="22%">
+            <defs>
+              <linearGradient id={`${chartId}-overlay`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.20)" />
+                <stop offset="48%" stopColor="rgba(255,255,255,0.05)" />
+                <stop offset="100%" stopColor="rgba(0,0,0,0.02)" />
+              </linearGradient>
+              <pattern id={`${chartId}-texture`} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(25)">
+                <path d="M0 8L8 0" stroke="rgba(255,255,255,0.24)" strokeWidth="1" />
+              </pattern>
+            </defs>
 
-          {/* ── Primary area: Net Payout ── */}
-          <Area
-            yAxisId="left"
-            type="monotone"
-            dataKey="netPayout"
-            stroke={isDark ? '#818cf8' : '#6366f1'}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill={`url(#${gradIdNet})`}
-            dot={false}
-            activeDot={<GlowDot />}
-            animationDuration={800}
-            animationEasing="ease-out"
-          />
+            <CartesianGrid vertical={false} stroke="rgba(148, 163, 184, 0.28)" strokeDasharray="3 5" />
 
-          {/* ── Secondary line: Base Salary ── */}
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="baseSalary"
-            stroke={isDark ? '#c084fc' : '#a855f7'}
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            dot={false}
-            activeDot={false}
-            opacity={0.55}
-            animationDuration={800}
-            animationEasing="ease-out"
-          />
+            <XAxis
+              dataKey="displayLabel"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }}
+              dy={10}
+            />
 
-          {/* ── 3-month moving average dashed line ── */}
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="netPayoutMA"
-            stroke={isDark ? '#94a3b8' : '#9ca3af'}
-            strokeWidth={1.5}
-            strokeDasharray="6 4"
-            strokeLinecap="round"
-            dot={false}
-            activeDot={false}
-            opacity={0.6}
-            connectNulls={false}
-            animationDuration={800}
-            animationEasing="ease-out"
-          />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              width={46}
+              domain={[0, axisConfig.max]}
+              ticks={axisConfig.ticks}
+              tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+              tickFormatter={formatCompactAmount}
+            />
 
-          {/* ── Monthly change % line on right axis ── */}
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="monthlyChange"
-            stroke="#10b981"
-            strokeWidth={1.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            dot={changeDot}
-            activeDot={false}
-            opacity={0.6}
-            connectNulls={false}
-            animationDuration={800}
-            animationEasing="ease-out"
-          />
+            <Tooltip cursor={false} content={<PayrollTrendTooltip />} isAnimationActive={false} />
 
-          {/* ── Extreme-point highlights ── */}
-          {extremes && (
-            <>
-              <ReferenceDot
-                yAxisId="left"
-                x={chartData[extremes.maxIdx].monthLabel}
-                y={chartData[extremes.maxIdx].netPayout}
-                r={0}
-                label={
-                  <ExtremeLabel
-                    label="High"
-                    value={chartData[extremes.maxIdx].netPayout}
-                    color="#10b981"
-                    isDark={isDark}
-                    above={true}
-                  />
-                }
-              />
-              <ReferenceDot
-                yAxisId="left"
-                x={chartData[extremes.minIdx].monthLabel}
-                y={chartData[extremes.minIdx].netPayout}
-                r={0}
-                label={
-                  <ExtremeLabel
-                    label="Low"
-                    value={chartData[extremes.minIdx].netPayout}
-                    color="#ef4444"
-                    isDark={isDark}
-                    above={false}
-                  />
-                }
-              />
-            </>
-          )}
-        </ComposedChart>
-      </ResponsiveContainer>
-
-      {/* ── Custom legend ── */}
-      <TrendLegend isDark={isDark} />
+            <Bar
+              dataKey="netPayout"
+              shape={(props: any) => <GlossyBar {...props} chartId={chartId} />}
+              maxBarSize={52}
+              radius={[10, 10, 10, 10]}
+              animationDuration={550}
+              animationEasing="ease-out"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
