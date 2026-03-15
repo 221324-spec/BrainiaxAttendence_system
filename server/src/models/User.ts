@@ -13,6 +13,8 @@ export interface IUser extends Document {
   baseMonthlySalary?: number;
   currency?: string;
   salaryEffectiveFrom?: Date;
+  employeeType: 'remote' | 'onsite';
+  biometricUserId?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -78,6 +80,15 @@ const userSchema = new Schema<IUser>(
       type: Date,
       default: undefined,
       select: false,
+    },
+    employeeType: {
+      type: String,
+      enum: ['remote', 'onsite'],
+      default: 'remote',
+    },
+    biometricUserId: {
+      type: Number,
+      default: undefined,
     },
   },
   {

@@ -12,6 +12,7 @@ import {
   HiOutlineOfficeBuilding,
   HiOutlineArrowLeft,
   HiOutlineCurrencyDollar,
+  HiOutlineFingerPrint,
 } from 'react-icons/hi';
 
 export default function AddEmployee() {
@@ -23,6 +24,8 @@ export default function AddEmployee() {
     email: '',
     password: '',
     department: '',
+    employeeType: 'remote' as 'remote' | 'onsite',
+    biometricUserId: '',
     baseMonthlySalary: '',
     currency: 'PKR',
   });
@@ -33,6 +36,8 @@ export default function AddEmployee() {
       email: data.email,
       password: data.password,
       department: data.department,
+      employeeType: data.employeeType,
+      biometricUserId: data.employeeType === 'onsite' && data.biometricUserId ? Number(data.biometricUserId) : undefined,
       baseMonthlySalary: data.baseMonthlySalary ? Number(data.baseMonthlySalary) : undefined,
       currency: data.currency,
     }),
@@ -40,7 +45,7 @@ export default function AddEmployee() {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ['admin', 'employees'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
-      setForm({ name: '', email: '', password: '', department: '', baseMonthlySalary: '', currency: 'PKR' });
+      setForm({ name: '', email: '', password: '', department: '', employeeType: 'remote', biometricUserId: '', baseMonthlySalary: '', currency: 'PKR' });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Failed to create employee');
@@ -55,6 +60,10 @@ export default function AddEmployee() {
     }
     if (form.password.length < 6) {
       toast.error('Password must be at least 6 characters');
+      return;
+    }
+    if (form.employeeType === 'onsite' && !form.biometricUserId) {
+      toast.error('Biometric User ID is required for onsite employees');
       return;
     }
     mutation.mutate(form);
@@ -165,6 +174,41 @@ export default function AddEmployee() {
               </div>
 
               <div>
+                <label className="label">Employee Type</label>
+                <div className="relative group">
+                  <HiOutlineUser className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary-500" />
+                  <select
+                    name="employeeType"
+                    value={form.employeeType}
+                    onChange={handleChange}
+                    className="input pl-11 appearance-none"
+                  >
+                    <option value="remote">Remote Employee</option>
+                    <option value="onsite">Onsite Employee</option>
+                  </select>
+                </div>
+              </div>
+
+              {form.employeeType === 'onsite' && (
+                <div>
+                  <label className="label">Biometric User ID</label>
+                  <div className="relative group">
+                    <HiOutlineFingerPrint className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary-500" />
+                    <input
+                      type="number"
+                      name="biometricUserId"
+                      value={form.biometricUserId}
+                      onChange={handleChange}
+                      className="input pl-11"
+                      placeholder="e.g. 123"
+                      min={1}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">ID from biometric device</p>
+                </div>
+              )}
+
+              <div className={form.employeeType === 'onsite' ? '' : 'md:col-span-2'}>
                 <label className="label">Monthly Salary (PKR)</label>
                 <div className="relative group">
                   <HiOutlineCurrencyDollar className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary-500" />

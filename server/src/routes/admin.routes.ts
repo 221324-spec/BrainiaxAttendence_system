@@ -18,8 +18,25 @@ router.patch('/employees/:id/salary', AdminController.updateEmployeeSalary);
 router.get('/employees/:id/profile', AdminController.getEmployeeProfile);
 router.patch('/employees/:id/profile', AdminController.updateEmployeeProfile);
 
+// Onsite employee management
+router.get('/onsite-employees', AdminController.getOnsiteEmployees);
+router.post('/onsite-employee', AdminController.createOnsiteEmployee);
+router.put('/onsite-employee/:id', AdminController.updateOnsiteEmployee);
+router.delete('/onsite-employee/:id', AdminController.deleteOnsiteEmployee);
+
 // Manual correction (admin)
 router.post('/attendance/correct', AdminController.adminUpsertAttendance);
 router.get('/export/:employeeId', AdminController.exportCsv);
+
+// Onsite attendance management
+router.get('/onsite-attendance', AdminController.getOnsiteAttendance);
+router.post('/onsite-attendance/import-csv', (req: any, res, next) => {
+  req.upload.single('csvFile')(req, res, (err: any) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+}, AdminController.importOnsiteAttendanceCsv);
 
 export default router;

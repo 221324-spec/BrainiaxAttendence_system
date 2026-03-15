@@ -162,7 +162,7 @@ function SidebarSection({
    LAYOUT
    ═══════════════════════════════════════════════════ */
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { logout, isAdmin } = useAuth();
+  const { logout, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
@@ -170,7 +170,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   /* ──────────────────────────────────────────────
@@ -192,7 +192,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       label: 'Attendance',
       icon: HiOutlineClipboardList,
       children: [
-        { path: '/admin/today-attendance', label: "Today's Attendance", icon: HiOutlineClipboardCheck },
+        { path: '/admin/today-attendance', label: 'Remote Attendance', icon: HiOutlineClipboardCheck },
+        { path: '/admin/onsite-attendance', label: 'Onsite Attendance', icon: HiOutlineClipboardList },
         { path: '/admin/attendance-correction', label: 'Correction', icon: HiOutlineAdjustments },
       ],
     },
@@ -208,7 +209,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   const employeeNav: NavItem[] = [
-    { path: '/dashboard', label: 'Dashboard', icon: HiOutlineClock },
+    { path: user?.employeeType === 'onsite' ? '/onsite-employee' : '/dashboard', label: 'Dashboard', icon: HiOutlineClock },
   ];
 
   const navItems = isAdmin ? adminNav : employeeNav;
@@ -286,7 +287,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         { path: '/admin/payroll', label: 'Payroll', icon: HiOutlineCurrencyDollar },
       ]
     : [
-        { path: '/dashboard', label: 'Dashboard', icon: HiOutlineClock },
+        { path: user?.employeeType === 'onsite' ? '/onsite-employee' : '/dashboard', label: 'Dashboard', icon: HiOutlineClock },
       ];
 
   return (

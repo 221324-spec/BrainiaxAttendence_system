@@ -165,6 +165,8 @@ export class AdminService {
       name?: string;
       email?: string;
       department?: string;
+      employeeType?: 'remote' | 'onsite';
+      biometricUserId?: number;
       baseMonthlySalary?: number;
       currency?: string;
       profilePicture?: string;
@@ -175,6 +177,8 @@ export class AdminService {
     if (updates.name) updateData.name = updates.name;
     if (updates.email) updateData.email = updates.email;
     if (updates.department) updateData.department = updates.department;
+    if (updates.employeeType) updateData.employeeType = updates.employeeType;
+    if (updates.biometricUserId !== undefined) updateData.biometricUserId = updates.biometricUserId;
     if (updates.profilePicture !== undefined) updateData.profilePicture = updates.profilePicture;
     if (updates.baseMonthlySalary !== undefined) {
       updateData.baseMonthlySalary = updates.baseMonthlySalary;
@@ -193,6 +197,157 @@ export class AdminService {
     );
     if (!user) throw Object.assign(new Error('Employee not found'), { statusCode: 404 });
     return { name: user.name, email: user.email };
+  }
+
+  /** Get all onsite employees */
+  static async getOnsiteEmployees(): Promise<any[]> {
+    return User.find({ role: 'employee', employeeType: 'onsite', isActive: true })
+      .select('name email department biometricUserId profilePicture')
+      .lean();
+  }
+
+  /** Get onsite attendance records with filtering */
+  static async getOnsiteAttendance(date?: string, employeeId?: string, department?: string): Promise<any[]> {
+    const matchConditions: any = {
+      source: 'biometric'
+    };
+
+    if (date) {
+      matchConditions.date = date;
+    }
+
+    if (employeeId) {
+      matchConditions.userId = employeeId;
+    }
+
+    const records = await Attendance.find(matchConditions)
+      .populate('userId', 'name email department')
+      .sort({ date: -1, createdAt: -1 })
+      .lean();
+
+    // Filter by department if specified
+    if (department) {
+      return records.filter(record => (record.userId as any)?.department === department);
+    }
+
+    return records;
+  }
+
+  /** Import onsite attendance from CSV */
+  static async importOnsiteAttendanceCsv(buffer: Buffer, filename: string): Promise<{ imported: number; errors: string[] }> {
+    const errors: string[] = [];
+    let imported = 0;
+
+    try {
+      const csvContent = buffer.toString('utf-8');
+      const lines = csvContent.split('\n').filter(line => line.trim());
+
+      if (lines.length < 2) {
+        throw new Error('CSV file must have at least a header row and one data row');
+      }
+
+      // Parse header
+      const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+      // Expected columns
+      const expectedColumns = ['employee_id', 'name', 'date', 'check_in', 'check_out', 'department'];
+      const columnIndices: { [key: string]: number } = {};
+
+      for (const col of expectedColumns) {
+        const index = header.indexOf(col);
+        if (index === -1) {
+          throw new Error(`Missing required column: ${col}`);
+        }
+        columnIndices[col] = index;
+      }
+
+      // Process each data row
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const columns = line.split(',').map(col => col.trim().replace(/"/g, ''));
+
+        try {
+          const employeeId = columns[columnIndices.employee_id];
+          const name = columns[columnIndices.name];
+          const date = columns[columnIndices.date];
+          const checkIn = columns[columnIndices.check_in];
+          const checkOut = columns[columnIndices.check_out];
+          const department = columns[columnIndices.department];
+
+          // Validate required fields
+          if (!employeeId || !date) {
+            errors.push(`Row ${i + 1}: Missing employee ID or date`);
+            continue;
+          }
+
+          // Find user by employee ID (assuming employeeId is stored in _id or we need to map it)
+          const user = await User.findOne({
+            $or: [
+              { _id: employeeId },
+              { email: employeeId }
+            ],
+            employeeType: 'onsite',
+            isActive: true
+          });
+
+          if (!user) {
+            errors.push(`Row ${i + 1}: Employee not found - ${employeeId}`);
+            continue;
+          }
+
+          // Parse times
+          let punchIn: Date | null = null;
+          let punchOut: Date | null = null;
+
+          if (checkIn && checkIn !== '') {
+            const [hours, minutes] = checkIn.split(':');
+            punchIn = new Date(date);
+            punchIn.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          }
+
+          if (checkOut && checkOut !== '') {
+            const [hours, minutes] = checkOut.split(':');
+            punchOut = new Date(date);
+            punchOut.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          }
+
+          // Create or update attendance record
+          const attendanceData: any = {
+            userId: user._id,
+            date,
+            source: 'biometric',
+            status: punchIn ? 'present' : 'absent'
+          };
+
+          if (punchIn) attendanceData.punchIn = punchIn;
+          if (punchOut) attendanceData.punchOut = punchOut;
+
+          // Calculate work minutes if both times exist
+          if (punchIn && punchOut) {
+            const workMs = punchOut.getTime() - punchIn.getTime();
+            attendanceData.totalWorkMinutes = Math.floor(workMs / (1000 * 60));
+          }
+
+          await Attendance.findOneAndUpdate(
+            { userId: user._id, date },
+            attendanceData,
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+
+          imported++;
+
+        } catch (rowError: any) {
+          errors.push(`Row ${i + 1}: ${rowError.message}`);
+        }
+      }
+
+    } catch (error: any) {
+      errors.push(`File processing error: ${error.message}`);
+    }
+
+    return { imported, errors };
   }
 
   /** Update profile picture */

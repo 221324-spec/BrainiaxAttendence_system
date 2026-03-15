@@ -58,6 +58,7 @@ export class AttendanceService {
       date: today,
       punchIn: new Date(),
       status: 'present',
+      source: 'remote',
     });
 
     return attendance;

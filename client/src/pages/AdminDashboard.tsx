@@ -43,13 +43,13 @@ function StatCard({
   iconColor: string;
 }) {
   return (
-    <div className="card stat-card-enhanced flex items-center gap-4 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-      <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl ${iconBg} shadow-sm`}>
-        <Icon className={`h-6 w-6 ${iconColor}`} />
+    <div className="card stat-card-enhanced flex items-center gap-3 p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+      <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl ${iconBg} shadow-sm`}>
+        <Icon className={`h-5 w-5 ${iconColor}`} />
       </div>
       <div>
-        <p className="text-[1.65rem] font-extrabold leading-none tracking-tight">{value}</p>
-        <p className="text-[11px] font-semibold text-gray-400 mt-1.5 uppercase tracking-wider">{label}</p>
+        <p className="text-[1.4rem] font-extrabold leading-none tracking-tight">{value}</p>
+        <p className="text-[10px] font-semibold text-gray-400 mt-1 uppercase tracking-wider">{label}</p>
       </div>
     </div>
   );
@@ -371,10 +371,10 @@ export default function AdminDashboard() {
   return (
     <Layout>
       {/* ── Header ── */}
-      <div className="mb-8 animate-fade-in">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight page-heading">Admin Dashboard</h1>
+            <h1 className="text-xl font-extrabold tracking-tight page-heading">Admin Dashboard</h1>
             <p className="text-sm text-gray-400 mt-0.5">Overview of Insight&apos;s across the organization</p>
           </div>
           <div className="flex items-center gap-2">
@@ -424,11 +424,11 @@ export default function AdminDashboard() {
       ) : (
         <>
           {/* ── Overview Section ── */}
-          <div className="flex items-center gap-3 mb-3 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2 animate-fade-in">
             <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 whitespace-nowrap">Overview</span>
             <div className="flex-1 h-px section-divider" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6 animate-fade-in">
             <StatCard icon={HiOutlineUsers} label="Total Employees" value={total} iconBg="bg-indigo-50" iconColor="text-indigo-600" />
             <StatCard icon={HiOutlineCheckCircle} label="Present Today" value={present} iconBg="bg-emerald-50" iconColor="text-emerald-600" />
             <StatCard icon={HiOutlineXCircle} label="Absent Today" value={absent} iconBg="bg-rose-50" iconColor="text-rose-600" />
@@ -436,42 +436,42 @@ export default function AdminDashboard() {
           </div>
 
           {/* ── Analytics Section ── */}
-          <div className="flex items-center gap-3 mb-3 animate-fade-in">
+          <div className="flex items-center gap-3 mb-2 animate-fade-in">
             <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 whitespace-nowrap">Analytics</span>
             <div className="flex-1 h-px section-divider" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2 card p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+            <div className="lg:col-span-2 card p-4">
               <PayrollTrendChart
                 data={payTrend}
                 selectedRange={trendRange}
                 onSelectedRangeChange={setTrendRange}
               />
             </div>
-            <div className="card p-6 flex flex-col">
-              <h3 className="text-base font-bold mb-4">Workforce Status</h3>
-              <div className="flex-1 flex items-center justify-center" style={{ minHeight: 220 }}>
+            <div className="card p-4 flex flex-col">
+              <h3 className="text-sm font-bold mb-3">Workforce Status</h3>
+              <div className="flex-1 flex items-center justify-center" style={{ minHeight: 180 }}>
                 <Doughnut data={statusData} options={statusOpts} />
               </div>
             </div>
           </div>
 
           {/* Payout by Dept + Revenue + Department Breakdown */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-            <div className="card p-6 flex flex-col">
-              <h3 className="text-base font-bold mb-4">Payout by Department</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+            <div className="card p-4 flex flex-col">
+              <h3 className="text-sm font-bold mb-3">Payout by Department</h3>
               {payDepts.length > 0 ? (
-                <div className="flex-1 flex items-center justify-center" style={{ minHeight: 220 }}>
+                <div className="flex-1 flex items-center justify-center" style={{ minHeight: 180 }}>
                   <Doughnut data={payDeptDonutData} options={payDeptDonutOpts} />
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 py-12 text-center">No payroll data</p>
+                <p className="text-sm text-gray-400 py-8 text-center">No payroll data</p>
               )}
             </div>
 
-            <div className="card p-6 flex flex-col items-center justify-center">
-              <div className="flex items-center justify-between w-full mb-4">
-                <h3 className="text-base font-bold">Payroll Spend vs Budget</h3>
+            <div className="card p-4 flex flex-col items-center justify-center">
+              <div className="flex items-center justify-between w-full mb-3">
+                <h3 className="text-sm font-bold">Payroll Spend vs Budget</h3>
                 {spendState === 'over-budget' && (
                   <span className="text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full">
                     Over Budget

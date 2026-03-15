@@ -18,6 +18,7 @@ export interface IAttendance extends Document {
   totalWorkMinutes: number;
   status: AttendanceStatus;
   isOnBreak: boolean;
+  source: 'remote' | 'biometric';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -74,6 +75,11 @@ const attendanceSchema = new Schema<IAttendance>(
     isOnBreak: {
       type: Boolean,
       default: false,
+    },
+    source: {
+      type: String,
+      enum: ['remote', 'biometric'],
+      default: 'remote',
     },
   },
   {

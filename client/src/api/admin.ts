@@ -24,10 +24,14 @@ export const adminApi = {
     email: string;
     password: string;
     department: string;
+    employeeType?: 'remote' | 'onsite';
+    biometricUserId?: number;
     baseMonthlySalary?: number;
     currency?: string;
   }): Promise<{ message: string; user: any }> => {
-    const res = await api.post('/admin/employees', data);
+    // Use different endpoints based on employee type
+    const endpoint = data.employeeType === 'onsite' ? '/admin/onsite-employee' : '/admin/employees';
+    const res = await api.post(endpoint, data);
     return res.data;
   },
 
@@ -112,6 +116,69 @@ export const adminApi = {
     }
   ): Promise<{ message: string }> => {
     const res = await api.patch(`/admin/employees/${employeeId}/profile`, updates);
+    return res.data;
+  },
+
+  // Onsite employee management
+  getOnsiteEmployees: async (): Promise<{ employees: User[] }> => {
+    const res = await api.get('/admin/onsite-employees');
+    return res.data;
+  },
+
+  createOnsiteEmployee: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    department: string;
+    biometricUserId?: number;
+    baseMonthlySalary?: number;
+    currency?: string;
+  }): Promise<{ message: string; user: any }> => {
+    const res = await api.post('/admin/onsite-employee', data);
+    return res.data;
+  },
+
+  updateOnsiteEmployee: async (
+    employeeId: string,
+    updates: {
+      name?: string;
+      email?: string;
+      department?: string;
+      biometricUserId?: number;
+      baseMonthlySalary?: number;
+      currency?: string;
+      profilePicture?: string;
+      password?: string;
+    }
+  ): Promise<{ message: string }> => {
+    const res = await api.put(`/admin/onsite-employee/${employeeId}`, updates);
+    return res.data;
+  },
+
+  deleteOnsiteEmployee: async (employeeId: string): Promise<{ message: string }> => {
+    const res = await api.delete(`/admin/onsite-employee/${employeeId}`);
+    return res.data;
+  },
+
+  // Onsite attendance management
+  getOnsiteAttendance: async (params?: {
+    date?: string;
+    employeeId?: string;
+    department?: string;
+  }): Promise<{ records: any[] }> => {
+    const res = await api.get('/admin/onsite-attendance', { params });
+    return res.data;
+  },
+
+  importOnsiteAttendanceCsv: async (file: File): Promise<{ imported: number; errors: string[] }> => {
+    const formData = new FormData();
+    formData.append('csvFile', file);
+
+    const res = await api.post('/admin/onsite-attendance/import-csv', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return res.data;
   },
 };

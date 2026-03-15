@@ -8,3 +8,4 @@ export { PayrollManualEditService } from './payrollManualEdit.service';
 export { PayrollFinalizeService } from './payrollFinalize.service';
 export { PayrollCsvService } from './payrollCsv.service';
 export { CompanyPolicyService } from './companyPolicy.service';
+export { BiometricService } from './biometric.service';

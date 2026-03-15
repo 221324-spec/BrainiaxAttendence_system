@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import LoginTypeSelection from './pages/LoginTypeSelection';
 import LoginPage from './pages/LoginPage';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -11,6 +12,8 @@ import AdminPayrollDashboard from './pages/AdminPayrollDashboard';
 import AdminPayrollDetail from './pages/AdminPayrollDetail';
 import AdminPayrollSettings from './pages/AdminPayrollSettings';
 import AdminTodayAttendance from './pages/AdminTodayAttendance';
+import AdminOnsiteAttendance from './pages/AdminOnsiteAttendance';
+import OnsiteEmployeeDashboard from './pages/OnsiteEmployeeDashboard';
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -30,13 +33,18 @@ export default function App() {
     <Routes>
       {/* Public */}
       <Route
+        path="/"
+        element={user ? <Navigate to={user.role === 'admin' ? '/admin' : (user.employeeType === 'onsite' ? '/onsite-employee' : '/dashboard')} /> : <LoginTypeSelection />}
+      />
+      <Route
         path="/login"
-        element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} /> : <LoginPage />}
+        element={user ? <Navigate to={user.role === 'admin' ? '/admin' : (user.employeeType === 'onsite' ? '/onsite-employee' : '/dashboard')} /> : <LoginPage />}
       />
 
       {/* Employee routes */}
       <Route element={<ProtectedRoute requiredRole="employee" />}>
         <Route path="/dashboard" element={<EmployeeDashboard />} />
+        <Route path="/onsite-employee" element={<OnsiteEmployeeDashboard />} />
       </Route>
 
       {/* Admin routes */}
@@ -49,6 +57,7 @@ export default function App() {
         <Route path="/admin/payroll/:runId" element={<AdminPayrollDetail />} />
         <Route path="/admin/payroll-settings" element={<AdminPayrollSettings />} />
         <Route path="/admin/today-attendance" element={<AdminTodayAttendance />} />
+        <Route path="/admin/onsite-attendance" element={<AdminOnsiteAttendance />} />
       </Route>
 
       {/* Default redirect */}
@@ -56,7 +65,7 @@ export default function App() {
         path="*"
         element={
           <Navigate
-            to={user ? (user.role === 'admin' ? '/admin' : '/dashboard') : '/login'}
+            to={user ? (user.role === 'admin' ? '/admin' : (user.employeeType === 'onsite' ? '/onsite-employee' : '/dashboard')) : '/'}
           />
         }
       />

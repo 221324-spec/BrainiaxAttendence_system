@@ -6,6 +6,8 @@ export interface User {
   department: string;
   isActive: boolean;
   profilePicture?: string;
+  employeeType?: 'remote' | 'onsite';
+  biometricUserId?: number;
   createdAt: string;
 }
 
@@ -38,6 +40,7 @@ export interface Attendance {
   totalWorkMinutes: number;
   status: 'present' | 'absent' | 'half-day';
   isOnBreak: boolean;
+  source?: 'remote' | 'biometric';
   createdAt: string;
 }
 

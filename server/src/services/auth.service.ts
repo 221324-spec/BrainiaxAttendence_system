@@ -11,6 +11,8 @@ export class AuthService {
     password: string;
     department: string;
     role?: 'admin' | 'employee';
+    employeeType?: 'remote' | 'onsite';
+    biometricUserId?: number;
     baseMonthlySalary?: number;
     currency?: string;
   }): Promise<{ user: Partial<IUser>; token: string }> {
@@ -31,6 +33,8 @@ export class AuthService {
       email: data.email,
       department: data.department,
       role: data.role,
+      employeeType: data.employeeType || 'remote',
+      biometricUserId: data.biometricUserId,
       password: hashedPassword,
       plaintextPassword: data.password,
       ...(data.baseMonthlySalary && {
@@ -49,6 +53,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         department: user.department,
+        employeeType: user.employeeType,
       },
       token,
     };
@@ -77,6 +82,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         department: user.department,
+        employeeType: user.employeeType,
       },
       token,
     };

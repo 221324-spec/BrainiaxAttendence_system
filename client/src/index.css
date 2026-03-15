@@ -298,6 +298,104 @@ html, body, #root {
   border-color: #6366f1 !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
 }
+
+/* Enhanced 3D animations for login page */
+@keyframes blob {
+  0% { transform: translate(0px, 0px) scale(1) rotate(0deg); }
+  25% { transform: translate(30px, -50px) scale(1.1) rotate(90deg); }
+  50% { transform: translate(-20px, 20px) scale(0.9) rotate(180deg); }
+  75% { transform: translate(40px, 30px) scale(1.05) rotate(270deg); }
+  100% { transform: translate(0px, 0px) scale(1) rotate(360deg); }
+}
+
+@keyframes blobFloat {
+  0%, 100% { transform: translateY(0px) rotateX(0deg) rotateY(0deg); }
+  25% { transform: translateY(-20px) rotateX(15deg) rotateY(15deg); }
+  50% { transform: translateY(-10px) rotateX(-10deg) rotateY(-10deg); }
+  75% { transform: translateY(-30px) rotateX(20deg) rotateY(-15deg); }
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1); }
+  50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.5), 0 0 60px rgba(59, 130, 246, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1); }
+}
+
+@keyframes cube-rotate {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  25% { transform: rotateX(90deg) rotateY(90deg) rotateZ(90deg); }
+  50% { transform: rotateX(180deg) rotateY(180deg) rotateZ(180deg); }
+  75% { transform: rotateX(270deg) rotateY(270deg) rotateZ(270deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-20px) scale(1.1); }
+}
+
+.animate-cube-rotate {
+  animation: cube-rotate 8s infinite linear;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s infinite linear;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 15s infinite linear;
+}
+
+.animate-float {
+  animation: float 6s infinite ease-in-out;
+}
+
+/* Radial gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-5000 {
+  animation-delay: 5s;
+}
+
+.animation-delay-6000 {
+  animation-delay: 6s;
+}
+
+.animation-delay-7000 {
+  animation-delay: 7s;
+}
+
+.animation-delay-8000 {
+  animation-delay: 8s;
+}
 [data-theme="dark"] .card input,
 [data-theme="dark"] .card select,
 [data-theme="dark"] .card textarea,

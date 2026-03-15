@@ -217,4 +217,110 @@ export class AdminController {
       next(error);
     }
   }
+
+  // Onsite Employee Management
+  static async getOnsiteEmployees(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const employees = await AdminService.getOnsiteEmployees();
+      res.json({ employees });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createOnsiteEmployee(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { name, email, password, department, biometricUserId, baseMonthlySalary, currency } = req.body;
+      const result = await AuthService.register({
+        name,
+        email,
+        password,
+        department,
+        role: 'employee',
+        employeeType: 'onsite',
+        biometricUserId: biometricUserId ? Number(biometricUserId) : undefined,
+        baseMonthlySalary: baseMonthlySalary ? Number(baseMonthlySalary) : undefined,
+        currency: currency || 'PKR',
+      });
+      res.status(201).json({ message: 'Onsite employee created successfully', user: result.user });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateOnsiteEmployee(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { name, email, department, biometricUserId, baseMonthlySalary, currency, profilePicture, password } = req.body;
+      if (!id) {
+        res.status(400).json({ message: 'Employee id is required' });
+        return;
+      }
+      const result = await AdminService.updateEmployeeProfile(id, {
+        name,
+        email,
+        department,
+        employeeType: 'onsite',
+        biometricUserId: biometricUserId ? Number(biometricUserId) : undefined,
+        baseMonthlySalary: baseMonthlySalary !== undefined ? Number(baseMonthlySalary) : undefined,
+        currency,
+        profilePicture,
+        password,
+      });
+      res.json({ message: `Onsite employee updated for ${result.name}` });
+    } catch (error: any) {
+      if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message });
+        return;
+      }
+      next(error);
+    }
+  }
+
+  static async deleteOnsiteEmployee(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        res.status(400).json({ message: 'employee id is required' });
+        return;
+      }
+      await AdminService.deleteEmployee(id);
+      res.json({ message: 'Onsite employee removed' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Onsite Attendance Management
+  static async getOnsiteAttendance(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { date, employeeId, department } = req.query;
+      const records = await AdminService.getOnsiteAttendance(
+        date as string,
+        employeeId as string,
+        department as string
+      );
+      res.json({ records });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async importOnsiteAttendanceCsv(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.file) {
+        res.status(400).json({ message: 'No CSV file uploaded' });
+        return;
+      }
+
+      const result = await AdminService.importOnsiteAttendanceCsv(req.file.buffer, req.file.originalname);
+      res.json({
+        message: 'CSV imported successfully',
+        imported: result.imported,
+        errors: result.errors
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

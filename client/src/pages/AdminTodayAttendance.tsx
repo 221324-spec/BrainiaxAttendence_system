@@ -78,7 +78,7 @@ export default function AdminTodayAttendance() {
       <div className="mb-8 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight page-heading">Today&apos;s Attendance</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight page-heading">Remote Attendance</h1>
             <p className="text-sm text-gray-400 mt-0.5">Live employee attendance status and CSV export</p>
           </div>
           <div className="flex items-center gap-2">

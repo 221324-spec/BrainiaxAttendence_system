@@ -6,10 +6,12 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
+import multer from 'multer';
 import { config } from './config';
 import routes from './routes';
 import { errorHandler, notFound } from './middleware';
 import { startMidnightJob } from './cron/midnightJob';
+import { BiometricService } from './services';
 
 const app = express();
 
@@ -37,6 +39,24 @@ app.use('/api/auth', limiter);
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
+// File upload configuration
+const upload = multer({
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'text/csv' || file.originalname.toLowerCase().endsWith('.csv')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only CSV files are allowed'));
+    }
+  },
+});
+
+// Make multer available globally
+app.use((req, res, next) => {
+  (req as any).upload = upload;
+  next();
+});
+
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -57,6 +77,10 @@ async function start(): Promise<void> {
 
     // Start cron jobs
     startMidnightJob();
+
+    // Start biometric sync service
+    const biometricService = new BiometricService();
+    biometricService.startSyncScheduler();
 
     app.listen(config.port, () => {
       console.log(`🚀 Server running on port ${config.port}`);
