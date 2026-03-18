@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
+import type { Attendance, MonthlySummary } from '../types';
 import {
   HiOutlineClock,
   HiOutlineCalendar,
@@ -9,83 +11,37 @@ import {
   HiOutlineChartBar,
 } from 'react-icons/hi';
 
-interface AttendanceRecord {
-  _id: string;
-  date: string;
-  punchIn: string | null;
-  punchOut: string | null;
-  status: string;
-  totalWorkMinutes: number;
-}
-
-interface MonthlySummary {
-  totalDays: number;
-  presentDays: number;
-  absentDays: number;
-  totalWorkHours: number;
-}
-
 export default function OnsiteEmployeeDashboard() {
   const { user } = useAuth();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Mock data - in real implementation, this would come from API
-  const mockTodayAttendance = {
-    date: new Date().toISOString().slice(0, 10),
-    punchIn: '09:00',
-    punchOut: '17:30',
-    status: 'present',
-    totalWorkMinutes: 510,
-  };
-
-  const mockMonthlyHistory: AttendanceRecord[] = [
-    {
-      _id: '1',
-      date: '2024-03-14',
-      punchIn: '09:00',
-      punchOut: '17:30',
-      status: 'present',
-      totalWorkMinutes: 510,
-    },
-    {
-      _id: '2',
-      date: '2024-03-13',
-      punchIn: '08:45',
-      punchOut: '17:15',
-      status: 'present',
-      totalWorkMinutes: 510,
-    },
-  ];
-
-  const mockMonthlySummary: MonthlySummary = {
-    totalDays: 20,
-    presentDays: 18,
-    absentDays: 2,
-    totalWorkHours: 153,
-  };
-
   const { data: todayAttendance } = useQuery({
     queryKey: ['attendance', 'today', user?._id],
     queryFn: async () => {
-      // TODO: Implement API call
-      return mockTodayAttendance;
+      const res = await api.get('/attendance/today');
+      return res.data.attendance;
     },
+    refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
   });
 
   const { data: monthlyHistory } = useQuery({
     queryKey: ['attendance', 'history', user?._id, selectedYear, selectedMonth],
-    queryFn: async () => {
-      // TODO: Implement API call
-      return { records: mockMonthlyHistory };
+    queryFn: async (): Promise<{ records: Attendance[] }> => {
+      const res = await api.get('/attendance/history', {
+        params: { year: selectedYear, month: selectedMonth },
+      });
+      return res.data;
     },
   });
 
   const { data: monthlySummary } = useQuery({
     queryKey: ['attendance', 'summary', user?._id, selectedYear, selectedMonth],
-    queryFn: async () => {
-      // TODO: Implement API call
-      return { summary: mockMonthlySummary };
+    queryFn: async (): Promise<{ summary: MonthlySummary }> => {
+      const res = await api.get('/attendance/summary', {
+        params: { year: selectedYear, month: selectedMonth },
+      });
+      return res.data;
     },
   });
 
@@ -221,7 +177,7 @@ export default function OnsiteEmployeeDashboard() {
             </thead>
             <tbody>
               {monthlyHistory?.records?.map((record) => (
-                <tr key={record._id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                <tr key={record._id || record.date} className="border-b border-gray-50 hover:bg-gray-50/50">
                   <td className="py-3 px-4 text-sm font-medium text-gray-900">{record.date}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{record.punchIn || '-'}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{record.punchOut || '-'}</td>

@@ -10,5 +10,6 @@ declare module 'node-zklib' {
     disconnect(): Promise<void>;
     getAttendances(): Promise<any[]>;
     clearAttendanceLog(): Promise<void>;
+    getUsers(): Promise<any[]>;
   }
 }

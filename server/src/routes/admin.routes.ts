@@ -4,6 +4,9 @@ import { authenticate, authorize } from '../middleware';
 
 const router = Router();
 
+// Temporary test route without authentication
+router.post('/biometric/test', AdminController.testBiometricDeviceCommunication);
+
 // All admin routes require authentication + admin role
 router.use(authenticate, authorize('admin'));
 
@@ -23,6 +26,12 @@ router.get('/onsite-employees', AdminController.getOnsiteEmployees);
 router.post('/onsite-employee', AdminController.createOnsiteEmployee);
 router.put('/onsite-employee/:id', AdminController.updateOnsiteEmployee);
 router.delete('/onsite-employee/:id', AdminController.deleteOnsiteEmployee);
+
+// Biometric device management
+router.get('/biometric/users', AdminController.getBiometricDeviceUsers);
+router.get('/biometric/status', AdminController.getBiometricDeviceStatus);
+router.post('/biometric/sync', AdminController.syncBiometricAttendance);
+router.post('/biometric/import-users', AdminController.importBiometricUsers);
 
 // Manual correction (admin)
 router.post('/attendance/correct', AdminController.adminUpsertAttendance);

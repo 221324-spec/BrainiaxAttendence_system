@@ -51,6 +51,18 @@ export default function AdminOnsiteAttendance() {
     },
   });
 
+  // Biometric sync mutation
+  const syncBiometricMutation = useMutation({
+    mutationFn: adminApi.syncBiometricAttendance,
+    onSuccess: () => {
+      toast.success('Biometric attendance synced successfully');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'onsite-attendance'] });
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to sync biometric attendance');
+    },
+  });
+
   const records = attendanceData?.records || [];
   const departments = [...new Set(records.map(r => r.userId?.department).filter(Boolean))];
 
@@ -118,8 +130,16 @@ export default function AdminOnsiteAttendance() {
               />
             </label>
             <button
+              onClick={() => syncBiometricMutation.mutate()}
+              disabled={syncBiometricMutation.isPending || isLoading}
+              className="group flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
+            >
+              <HiOutlineFingerPrint className={`h-3.5 w-3.5 transition-transform duration-500 ${syncBiometricMutation.isPending ? 'animate-pulse' : 'group-hover:scale-110'}`} />
+              {syncBiometricMutation.isPending ? 'Syncing...' : 'Sync Device'}
+            </button>
+            <button
               onClick={handleManualRefresh}
-              disabled={isLoading}
+              disabled={isLoading || syncBiometricMutation.isPending}
               className="group flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold shadow-sm transition-all hover:bg-gray-50 disabled:opacity-50"
             >
               <HiOutlineRefresh className={`h-3.5 w-3.5 transition-transform duration-500 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
@@ -220,8 +240,8 @@ export default function AdminOnsiteAttendance() {
                   </td>
                 </tr>
               ) : (
-                records.map((record) => (
-                  <tr key={record._id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                records.map((record, index) => (
+                  <tr key={record._id || `record-${index}`} className="border-b border-gray-50 hover:bg-gray-50/50">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">

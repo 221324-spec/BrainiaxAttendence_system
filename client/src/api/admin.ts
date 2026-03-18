@@ -181,6 +181,27 @@ export const adminApi = {
     });
     return res.data;
   },
+
+  // Biometric device management
+  getBiometricDeviceUsers: async (): Promise<{ users: any[] }> => {
+    const res = await api.get('/admin/biometric/users');
+    return res.data;
+  },
+
+  getBiometricDeviceStatus: async (): Promise<{ connected: boolean }> => {
+    const res = await api.get('/admin/biometric/status');
+    return res.data;
+  },
+
+  importBiometricUsers: async (): Promise<{ message: string; imported: number; errors: string[]; users: any[] }> => {
+    const res = await api.post('/admin/biometric/import-users');
+    return res.data;
+  },
+
+  syncBiometricAttendance: async (): Promise<{ message: string }> => {
+    const res = await api.post('/admin/biometric/sync');
+    return res.data;
+  },
 };
 
 // also provide a named export for callers that prefer direct import

@@ -206,31 +206,53 @@ export class AdminService {
       .lean();
   }
 
-  /** Get onsite attendance records with filtering */
+  /** Get onsite attendance records with filtering - now includes all onsite employees with status */
   static async getOnsiteAttendance(date?: string, employeeId?: string, department?: string): Promise<any[]> {
-    const matchConditions: any = {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+
+    // Get all onsite employees
+    const onsiteEmployees = await User.find({
+      role: 'employee',
+      employeeType: 'onsite',
+      isActive: true
+    }).select('name email department biometricUserId').lean();
+
+    // Get attendance records for the date
+    const attendanceRecords = await Attendance.find({
+      date: targetDate,
       source: 'biometric'
-    };
+    }).populate('userId', 'name email department').lean();
 
-    if (date) {
-      matchConditions.date = date;
-    }
+    // Create a map of userId to attendance
+    const attendanceMap = new Map();
+    attendanceRecords.forEach(record => {
+      attendanceMap.set(record.userId._id.toString(), record);
+    });
 
+    // Build result with all employees and their status
+    const result = onsiteEmployees.map(employee => {
+      const attendance = attendanceMap.get(employee._id.toString());
+      return {
+        userId: employee,
+        date: targetDate,
+        status: attendance ? 'present' : 'absent',
+        punchIn: attendance?.punchIn || null,
+        punchOut: attendance?.punchOut || null,
+        totalWorkMinutes: attendance?.totalWorkMinutes || 0,
+        source: 'biometric'
+      };
+    });
+
+    // Apply filters
+    let filteredResult = result;
     if (employeeId) {
-      matchConditions.userId = employeeId;
+      filteredResult = filteredResult.filter(r => r.userId._id.toString() === employeeId);
     }
-
-    const records = await Attendance.find(matchConditions)
-      .populate('userId', 'name email department')
-      .sort({ date: -1, createdAt: -1 })
-      .lean();
-
-    // Filter by department if specified
     if (department) {
-      return records.filter(record => (record.userId as any)?.department === department);
+      filteredResult = filteredResult.filter(r => r.userId.department === department);
     }
 
-    return records;
+    return filteredResult;
   }
 
   /** Import onsite attendance from CSV */

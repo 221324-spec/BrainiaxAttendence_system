@@ -1,6 +1,7 @@
 
 import { Request, Response, NextFunction } from 'express';
-import { AdminService, CsvService, AuthService, AttendanceService } from '../services';
+import { AdminService, CsvService, AuthService, AttendanceService, BiometricService } from '../services';
+import { User } from '../models';
 
 export class AdminController {
   /**
@@ -318,6 +319,94 @@ export class AdminController {
         message: 'CSV imported successfully',
         imported: result.imported,
         errors: result.errors
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Biometric Device Management
+  static async getBiometricDeviceUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const biometricService = new BiometricService();
+      const users = await biometricService.getDeviceUsers();
+      res.json({ users });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async syncBiometricAttendance(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const biometricService = new BiometricService();
+      await biometricService.syncAttendanceLogs();
+      res.json({ message: 'Biometric attendance sync completed successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getBiometricDeviceStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const biometricService = new BiometricService();
+      const status = await biometricService.getDeviceStatus();
+      res.json(status);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async testBiometricDeviceCommunication(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const biometricService = new BiometricService();
+      const testResult = await biometricService.testDeviceCommunication();
+      res.json(testResult);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async importBiometricUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const biometricService = new BiometricService();
+      const deviceUsers = await biometricService.getDeviceUsers();
+
+      const imported = [];
+      const errors = [];
+
+      for (const deviceUser of deviceUsers) {
+        try {
+          // Check if user already exists
+          const existingUser = await User.findOne({ biometricUserId: deviceUser.uid });
+          if (existingUser) {
+            errors.push(`User with biometric ID ${deviceUser.uid} already exists`);
+            continue;
+          }
+
+          // Create new onsite employee
+          const result = await AuthService.register({
+            name: deviceUser.name || `User ${deviceUser.uid}`,
+            email: `biometric${deviceUser.uid}@example.com`, // Placeholder email
+            password: 'defaultpassword', // Should be changed
+            department: 'Onsite',
+            role: 'employee',
+            employeeType: 'onsite',
+            biometricUserId: deviceUser.uid,
+            baseMonthlySalary: 0, // Set later
+            currency: 'PKR',
+          });
+
+          imported.push(result.user);
+        } catch (error: any) {
+          errors.push(`Failed to import user ${deviceUser.uid}: ${error.message}`);
+        }
+      }
+
+      res.json({
+        message: 'Import completed',
+        imported: imported.length,
+        errors,
+        users: imported
       });
     } catch (error) {
       next(error);
